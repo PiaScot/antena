@@ -1,0 +1,28 @@
+@import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+	--bg-body: #ffffff;
+	--text-body: #333333;
+	--bg-article: #fafafa;
+}
+
+.dark {
+	--bg-body: #111111;
+	--text-body: #dddddd;
+	--bg-article: #1e1e1e;
+}
+
+.article video,
+.article iframe,
+.article embed,
+.article object {
+	width: 100% !important;
+	max-width: 100% !important;
+	height: auto !important;
+	display: block;
+	margin: 8px 0;
+}
+.article {
+	overflow-x: hidden;
+}
