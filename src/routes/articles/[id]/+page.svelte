@@ -9,11 +9,11 @@ const article = data.article;
 </article>
 
 <style>
-  *, *::before, *::after {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-  }
+  /* *, *::before, *::after { */
+  /*   box-sizing: border-box; */
+  /*   margin: 0; */
+  /*   padding: 0; */
+  /* } */
   body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
                  "Helvetica Neue", Arial, sans-serif;
@@ -26,7 +26,6 @@ const article = data.article;
     color: var(--text, #333);
   }
 
-  /* あなたの抽出 HTML が <section class="article"> で囲まれているなら… */
   .article {
     border-top: 3px solid #aaa;
     padding: 4px;
