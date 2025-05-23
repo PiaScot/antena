@@ -14,7 +14,5 @@ export const load: PageServerLoad = async ({ params }) => {
     return { status: 404, error: new Error("記事が見つかりません") };
   }
 
-  console.log(`length: ${article.length} category: ${article.category}`);
-
   return { article: article };
 };

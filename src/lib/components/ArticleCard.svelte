@@ -8,7 +8,7 @@ dayjs.extend(utc);
 dayjs.extend(timezone);
 dayjs.tz.setDefault("Asia/Tokyo");
 
-export let article: Article;
+export let article: Article & { site_title: string };
 const formattedDate = dayjs(article.pub_date).tz().format("YYYY/MM/DD HH:mm");
 </script>
 
@@ -29,31 +29,27 @@ const formattedDate = dayjs(article.pub_date).tz().format("YYYY/MM/DD HH:mm");
 
 		<div class="flex min-w-0 flex-1 flex-col p-3 text-sm">
 			<div class="mb-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
-				{#if article.site_name}
-				<span
-					class="font-semibold text-emerald-700 dark:text-emerald-500 truncate"
-					title={article.site_name}
-				>
-					{article.site_name}
-				</span>
-				{/if}
 				<span class="text-slate-500 dark:text-slate-400 whitespace-nowrap">
 					{formattedDate}
 				</span>
-				{#if article.category}
+				
+				{#if article.site_title}
 				<span
 					class="whitespace-nowrap rounded-full bg-slate-200 dark:bg-slate-600 px-2 py-0.5 text-xs font-medium text-slate-700 dark:text-slate-300 truncate"
-					title={article.category}
+					title={article.site_title}
 				>
-					{article.category}
+					{article.site_title}
 				</span>
 				{/if}
 			</div>
 
-			<h3 class="text-base font-semibold text-slate-800 dark:text-slate-100 mb-1 line-clamp-2" title={article.title}>
+			<h3 
+				class="text-base font-semibold text-slate-800 dark:text-slate-100 mb-1 line-clamp-2 h-12" 
+				title={article.title}
+			>
 				{article.title || "タイトルなし"}
 			</h3>
 			
-			</div>
+		</div>
 	</div>
 </a>
