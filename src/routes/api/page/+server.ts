@@ -7,7 +7,7 @@ import type { Site } from "$lib/types";
 export const GET: RequestHandler = async () => {
   const { data, error } = await supabase
     .from<Site>(SITE_TABLE)
-    .select("url, domain, title, category, last_access");
+    .select("id, url, domain, title, category, last_access");
 
   if (error) {
     console.error("Error fetching sites:", error);

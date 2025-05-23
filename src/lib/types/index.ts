@@ -5,9 +5,9 @@ export interface Site {
   rss: string;
   category: string;
   domain: string;
-  lastAccess: string;
-  durationAccess: number;
-  scrapeOptions: object;
+  last_access: string;
+  duration_access: number;
+  scrape_options: object;
 }
 
 export interface Article {

@@ -6,51 +6,60 @@ import { ARTICLE_TABLE } from "$env/static/private";
 
 export const GET: RequestHandler = async ({ url }) => {
   const category = url.searchParams.get("category") || "all";
+  const siteId = url.searchParams.get("site");
 
   try {
-    // ベースとなるビルダーを作成
-    let builder = supabase
-      .from<Article & { site: { title: string } }>(ARTICLE_TABLE)
-      // articles.* に加えて、antena_sites.title を site.title としてネスト取得
-      .select("*, site:antena_sites(title)", { count: "exact" });
+    let result;
 
-    if (category === "all") {
-      builder = builder.in("category", ["2d", "real"]);
-    } // それ以外は eq で絞り込み
-    else {
-      builder = builder.eq("category", category);
+    if (siteId) {
+      // ────────── site 指定あり ──────────
+      result = await supabase
+        .from(ARTICLE_TABLE)
+        .select("*, site:antena_sites(title)", { count: "exact" })
+        .eq("site_id", Number(siteId))
+        .order("pub_date", { ascending: false })
+        .limit(200);
+    } else if (category === "all") {
+      // ────────── カテゴリ all のときだけ別グループで in ──────────
+      result = await supabase
+        .from(ARTICLE_TABLE)
+        .select("*, site:antena_sites(title)", { count: "exact" })
+        .in("category", ["2d", "real"])
+        .order("pub_date", { ascending: false })
+        .limit(200);
+    } else {
+      // ────────── 特定カテゴリ指定あり ──────────
+      result = await supabase
+        .from(ARTICLE_TABLE)
+        .select("*, site:antena_sites(title)", { count: "exact" })
+        .eq("category", category)
+        .order("pub_date", { ascending: false })
+        .limit(200);
     }
 
-    // 並び替え＆件数制限
-    const { data: articles, count, error: fetchError } = await builder
-      .order("pub_date", { ascending: false })
-      .limit(100);
-
-    if (fetchError) {
-      throw new Error(
-        `Failed to fetch articles from table ${ARTICLE_TABLE}: ${fetchError.message}`,
-      );
-    }
-
-    if (!articles) {
+    const { data: rows, count, error } = result;
+    if (error) throw error;
+    if (!rows) {
       return new Response(
-        JSON.stringify({ error: "No articles found" }),
+        JSON.stringify({ error: "記事が見つかりませんでした" }),
         { status: 404, headers: { "Content-Type": "application/json" } },
       );
     }
-    const payload = articles.map((a) => ({
-      id: a.id,
-      site_id: a.site_id,
-      site_title: a.site?.title ?? null,
-      title: a.title,
-      url: a.url,
-      category: a.category,
-      content: a.content,
-      pub_date: a.pub_date,
-      thumbnail: a.thumbnail,
+
+    // フロントが使いやすいようにフラットにマップ
+    const articles = rows.map((r) => ({
+      id: r.id,
+      site_id: r.site_id,
+      site_title: r.site?.title ?? null,
+      title: r.title,
+      url: r.url,
+      category: r.category,
+      content: r.content,
+      pub_date: r.pub_date,
+      thumbnail: r.thumbnail,
     }));
 
-    return new Response(JSON.stringify({ articles: payload, count }), {
+    return new Response(JSON.stringify({ articles, count }), {
       status: 200,
       headers: {
         "Content-Type": "application/json",
