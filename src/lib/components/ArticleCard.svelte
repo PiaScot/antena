@@ -23,6 +23,7 @@ const formattedDate = dayjs(article.pub_date).tz().format("YYYY/MM/DD HH:mm");
 				class="h-full w-full object-cover aspect-[4/3]"
 				src={article.thumbnail || '/favicon.png'}
 				alt="{article.title || '記事サムネイル'}"
+        referrerpolicy="no-referrer"
 				loading="lazy"
 			/>
 		</div>
