@@ -20,7 +20,29 @@ let currentFullUrl: string;
 let pageStoreUnsubscribe: () => void;
 let beforeNavigateUnsubscribe: () => void;
 
-// データ取得＆グルーピング
+const CATEGORY_STATE_KEY = "category_visible_state";
+
+// カテゴリ状態をセッションストレージに保存
+function saveCategoryState() {
+	if (typeof window === "undefined") return;
+	sessionStorage.setItem(CATEGORY_STATE_KEY, JSON.stringify(visibleCategories));
+}
+
+// カテゴリ状態をセッションストレージから復元
+function restoreCategoryState() {
+	if (typeof window === "undefined") return;
+	const saved = sessionStorage.getItem(CATEGORY_STATE_KEY);
+	if (saved) {
+		try {
+			const obj = JSON.parse(saved);
+			// 本来のカテゴリが変わってる可能性もあるので、現在あるものだけ適用
+			for (const cat of allCategories) {
+				if (obj[cat] !== undefined) visibleCategories[cat] = obj[cat];
+			}
+		} catch {}
+	}
+}
+
 async function fetchSites() {
 	loading = true;
 	error = null;
@@ -32,6 +54,7 @@ async function fetchSites() {
 
 		groupSites();
 		initializeVisibleCategories();
+		restoreCategoryState(); // ←追加
 	} catch (e: any) {
 		error = e.message;
 	} finally {
@@ -69,6 +92,12 @@ onMount(() => {
 	fetchSites();
 });
 
+// カテゴリ選択切り替え時に保存
+function toggleCategory(cat) {
+	visibleCategories[cat] = !visibleCategories[cat];
+	saveCategoryState();
+}
+
 beforeNavigateUnsubscribe = beforeNavigate(({ from, to, type }) => {
 	if (from && from.url.href === currentFullUrl) {
 		if ((to && to.url.href !== currentFullUrl) || (!to && type === "leave")) {
@@ -77,6 +106,7 @@ beforeNavigateUnsubscribe = beforeNavigate(({ from, to, type }) => {
 				positions[currentFullUrl] = scrollY;
 				return positions;
 			});
+			saveCategoryState(); // ←追加：離脱時にも保存
 		}
 	}
 });
@@ -92,11 +122,10 @@ onDestroy(() => {
 {:else if error}
   <p class="text-red-400 text-center py-8">エラー: {error}</p>
 {:else}
-  <!-- カテゴリフィルタボタン：Headerの下にsticky配置 -->
   <div class="flex gap-2 overflow-x-auto px-2 py-3 bg-slate-50 dark:bg-slate-900 sticky top-16 z-10 border-b border-slate-200 dark:border-slate-700">
     {#each allCategories as cat}
       <button
-        on:click={() => visibleCategories[cat] = !visibleCategories[cat]}
+        on:click={() => toggleCategory(cat)}
         class="px-3 py-1 rounded-full font-semibold text-sm transition-colors duration-150
           {visibleCategories[cat]
             ? 'bg-emerald-600 text-white dark:bg-emerald-400 dark:text-slate-900'
