@@ -117,4 +117,8 @@ const article = data.article;
       font-size: 18px;
       font-weight: bold;
     }
+    blockquote {
+      border: 1px solid #ccc;
+      background: #f0f0f0;
+    }
 </style>
