@@ -5,6 +5,7 @@ import { theme } from "$lib/stores/theme";
 import { fontSize, fontSizeClassMap } from "$lib/stores/theme";
 import Header from "$lib/components/Header.svelte";
 import Footer from "$lib/components/Footer.svelte";
+import { page } from "$app/stores";
 </script>
 
 <svelte:head>
@@ -45,5 +46,7 @@ import Footer from "$lib/components/Footer.svelte";
 		<slot />
 	</main>
 
-	<Footer />
+  {#if !$page.url.pathname.startsWith("/articles/")}
+    <Footer />
+  {/if}
 </div>
