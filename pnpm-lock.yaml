@@ -14,9 +14,15 @@ importers:
       drizzle-orm:
         specifier: ^0.40.0
         version: 0.40.1(gel@2.0.2)(mysql2@3.14.0)
+      lucide-svelte:
+        specifier: ^0.511.0
+        version: 0.511.0(svelte@5.25.7)
       mysql2:
         specifier: ^3.12.0
         version: 3.14.0
+      svelte-dnd-action:
+        specifier: ^0.9.61
+        version: 0.9.61(svelte@5.25.7)
     devDependencies:
       '@supabase/supabase-js':
         specifier: ^2.49.7
@@ -1919,6 +1925,11 @@ packages:
     resolution: {integrity: sha512-Nv9KddBcQSlQopmBHXSsZVY5xsdlZkdH/Iey0BlcBYggMd4two7cZnKOK9vmy3nY0O5RGH99z1PCeTpPqszUYg==}
     engines: {bun: '>=1.0.0', deno: '>=1.30.0', node: '>=8.0.0'}
 
+  lucide-svelte@0.511.0:
+    resolution: {integrity: sha512-cSBj1UPKt1EXnj3VBUidBqwHyFQ83pLYiTaQ/67Q5thnaP9IPohL2UXjqEzgSXXklYPYQKaAv+kmVdliDWFjWQ==}
+    peerDependencies:
+      svelte: ^3 || ^4 || ^5.0.0-next.42
+
   lz-string@1.5.0:
     resolution: {integrity: sha512-h5bgJWpxJNswbU7qCrV0tIKQCaS3blPDrqKWx+QxzuzL1zGUzij9XCWLrSLsJPu5t+eWA/ycetzYAO5IOMcWAQ==}
     hasBin: true
@@ -2244,6 +2255,11 @@ packages:
     peerDependencies:
       svelte: ^4.0.0 || ^5.0.0-next.0
       typescript: '>=5.0.0'
+
+  svelte-dnd-action@0.9.61:
+    resolution: {integrity: sha512-xj0jZNdV44MAMbdGIAuBYEombmK7A7ticemOtdR5ErWw0f3IxcfcnrRjlYEK0rRjsahVsU+VdGUMwjPVyXrSrA==}
+    peerDependencies:
+      svelte: '>=3.23.0 || ^5.0.0-next.0'
 
   svelte@5.25.7:
     resolution: {integrity: sha512-0fzXbXaKfSvFUs6Wxev2h4CoEhexZotbTF9EJ4+Cg7MHW64ZnZ9+xUedZyEpgj0Tt9HrYGv9aASHkqjn9b/cPw==}
@@ -4024,6 +4040,10 @@ snapshots:
 
   lru.min@1.1.2: {}
 
+  lucide-svelte@0.511.0(svelte@5.25.7):
+    dependencies:
+      svelte: 5.25.7
+
   lz-string@1.5.0: {}
 
   magic-string@0.30.17:
@@ -4322,6 +4342,10 @@ snapshots:
       typescript: 5.8.3
     transitivePeerDependencies:
       - picomatch
+
+  svelte-dnd-action@0.9.61(svelte@5.25.7):
+    dependencies:
+      svelte: 5.25.7
 
   svelte@5.25.7:
     dependencies:

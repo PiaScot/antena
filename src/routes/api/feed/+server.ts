@@ -18,7 +18,7 @@ export const GET: RequestHandler = async ({ url }) => {
         .select("*, site:antena_sites(title)", { count: "exact" })
         .eq("site_id", Number(siteId))
         .order("pub_date", { ascending: false })
-        .limit(200);
+        .limit(500);
     } else if (category === "all") {
       // ────────── カテゴリ all のときだけ別グループで in ──────────
       result = await supabase
@@ -26,7 +26,7 @@ export const GET: RequestHandler = async ({ url }) => {
         .select("*, site:antena_sites(title)", { count: "exact" })
         .in("category", ["2d", "real"])
         .order("pub_date", { ascending: false })
-        .limit(200);
+        .limit(500);
     } else {
       // ────────── 特定カテゴリ指定あり ──────────
       result = await supabase
@@ -34,7 +34,7 @@ export const GET: RequestHandler = async ({ url }) => {
         .select("*, site:antena_sites(title)", { count: "exact" })
         .eq("category", category)
         .order("pub_date", { ascending: false })
-        .limit(200);
+        .limit(500);
     }
 
     const { data: rows, count, error } = result;
