@@ -6,9 +6,10 @@ import { fontSize, fontSizeClassMap } from "$lib/stores/theme";
 import Header from "$lib/components/Header.svelte";
 import Footer from "$lib/components/Footer.svelte";
 import { page } from "$app/stores";
-
-// 記事詳細ページかどうかを判定し、必要ならarticleデータを取得
+import { injectSpeedInsights } from "@vercel/speed-insights/sveltekit";
 let article = null;
+
+injectSpeedInsights();
 
 $: {
 	// 記事詳細ページか
