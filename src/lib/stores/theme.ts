@@ -22,7 +22,7 @@ if (browser) {
 export type FontSizeValue = "small" | "medium" | "large";
 
 // フォントサイズのストア (初期値は 'medium')
-export const fontSize = writable<FontSizeValue>("medium");
+export const fontSize = writable<FontSizeValue>("small");
 
 // フォントサイズの値と対応するTailwind CSSクラスのマッピング
 export const fontSizeClassMap: Record<FontSizeValue, string> = {
