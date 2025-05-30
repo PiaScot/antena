@@ -15,7 +15,7 @@ const formattedDate = dayjs(article.pub_date).tz().format("YYYY/MM/DD HH:mm");
 <div
   class="block w-full rounded-lg border border-gray-300 dark:border-slate-600 shadow-md hover:shadow-lg h-20 md:h-24 transition-shadow duration-200 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 focus-visible:ring-2 focus-visible:ring-emerald-500 focus:outline-none"
 >
-  <a href={`/articles/${article.id}`} rel="noopener noreferrer" class="flex w-full h-full min-w-0 overflow-hidden text-sm no-underline">
+  <a href={`${article.url}`} rel="noopener noreferrer" class="flex w-full h-full min-w-0 overflow-hidden text-sm no-underline">
     <div class="h-full w-20 md:w-24 flex-none overflow-hidden bg-slate-100 dark:bg-slate-700 rounded-l-lg flex items-center justify-center">
       <img
         class="h-full w-full object-cover rounded-l-lg"

@@ -5,7 +5,9 @@ import { beforeNavigate } from "$app/navigation";
 import { page } from "$app/stores";
 import { get } from "svelte/store";
 import ArticleCard from "$lib/components/ArticleCard.svelte";
+import ArticleCardSimple from "$lib/components/ArticleCardSimple.svelte";
 import type { Article } from "$lib/types";
+import { GalleryHorizontalEnd, List } from "lucide-svelte";
 
 // スクロール位置を保持するストア (キーは href)
 import { scrollPositions } from "$lib/stores/scrollStore";
@@ -21,6 +23,8 @@ let siteFromQuery: string | null = null;
 let currentFullUrl: string; // 現在のページの完全なURLを保持 (例: /feed?category=tech)
 let pageStoreUnsubscribe: () => void; // $pageストアの購読解除用関数
 let beforeNavigateUnsubscribe: () => void; // beforeNavigateの購読解除用関数
+
+let cardStyle: "image" | "simple" = "image";
 
 // $pageストアを購読し、現在のページのURLが変わるたびにcurrentFullUrlを更新
 pageStoreUnsubscribe = page.subscribe((p) => {
@@ -109,6 +113,43 @@ onDestroy(() => {
 });
 </script>
 
+<div
+  class="sticky top-[64px] z-10 bg-slate-900/90 dark:bg-slate-900/90 shadow mb-2 w-full"
+>
+  <div class="flex justify-center items-center gap-4 py-2">
+    <button
+      on:click={() => cardStyle = "image"}
+      class="rounded-full p-2 flex items-center justify-center
+      transition border-2
+      border-transparent
+      hover:border-emerald-400
+      focus-visible:ring-2 focus-visible:ring-emerald-500
+      bg-slate-800 dark:bg-slate-700
+      text-emerald-400"
+      aria-label="サムネイル表示"
+      aria-pressed={cardStyle === "image"}
+      style={cardStyle === "image" ? "background: #10b98122; border-color: #10b981;" : ""}
+    >
+      <GalleryHorizontalEnd class="w-6 h-6" />
+    </button>
+    <button
+      on:click={() => cardStyle = "simple"}
+      class="rounded-full p-2 flex items-center justify-center
+      transition border-2
+      border-transparent
+      hover:border-emerald-400
+      focus-visible:ring-2 focus-visible:ring-emerald-500
+      bg-slate-800 dark:bg-slate-700
+      text-emerald-400"
+      aria-label="リスト表示"
+      aria-pressed={cardStyle === "simple"}
+      style={cardStyle === "simple" ? "background: #10b98122; border-color: #10b981;" : ""}
+    >
+      <List class="w-6 h-6" />
+    </button>
+  </div>
+</div>
+
 <div class="py-1">
   {#if loading}
     <p class="text-center text-slate-600 dark:text-slate-300">読み込み中...</p>
@@ -120,9 +161,19 @@ onDestroy(() => {
     <div class="mx-auto w-full max-w-screen-lg px-1 sm:px-2">
       <div class="space-y-1">
         {#each articles as article (article.url)}
-          <ArticleCard {article} />
+          {#if cardStyle === "image"}
+            <ArticleCard {article} />
+          {:else}
+            <ArticleCardSimple {article} />
+          {/if}
         {/each}
       </div>
     </div>
   {/if}
 </div>
+
+<style>
+button[selected], button[aria-pressed="true"] {
+  background: #10b981 !important; /* emerald-500 */
+}
+</style>
