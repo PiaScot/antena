@@ -82,7 +82,6 @@ onDestroy(() => {
 
 <div class="max-w-2xl mx-auto py-6 px-3">
 	<h2 class="text-2xl font-bold mb-4 text-center text-slate-800 dark:text-white">記事タイトル検索</h2>
-	<!-- 検索窓 -->
 	<div class="relative mb-4">
 		<input
 			type="search"

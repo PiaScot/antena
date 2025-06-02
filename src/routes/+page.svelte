@@ -7,14 +7,14 @@ function generateId() {
 		: Math.random().toString(36).slice(2);
 }
 
-let categories = [
+const categories = [
 	{ id: generateId(), label: "まとめNEWS", cat: "news", visible: true },
 	{ id: generateId(), label: "雑談", cat: "chat", visible: true },
 	{ id: generateId(), label: "IT・ガジェット", cat: "it", visible: true },
 	{ id: generateId(), label: "面白・衝撃", cat: "orckt", visible: true },
-	// { id: generateId(), label: "ALL", cat: "all", visible: true },
-	// { id: generateId(), label: "REAL", cat: "real", visible: true },
-	// { id: generateId(), label: "2D", cat: "2d", visible: true },
+	{ id: generateId(), label: "ALL", cat: "all", visible: true },
+	{ id: generateId(), label: "REAL", cat: "real", visible: true },
+	{ id: generateId(), label: "2D", cat: "2d", visible: true },
 ];
 </script>
 

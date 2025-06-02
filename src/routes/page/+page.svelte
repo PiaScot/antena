@@ -11,7 +11,6 @@ let sites: Site[] = [];
 let loading = true;
 let error: string | null = null;
 
-// カテゴリグループ
 let groupedSites: Record<string, Site[]> = {};
 let allCategories: string[] = [];
 let visibleCategories: Record<string, boolean> = {};
@@ -22,20 +21,17 @@ let beforeNavigateUnsubscribe: () => void;
 
 const CATEGORY_STATE_KEY = "category_visible_state";
 
-// カテゴリ状態をセッションストレージに保存
 function saveCategoryState() {
 	if (typeof window === "undefined") return;
 	sessionStorage.setItem(CATEGORY_STATE_KEY, JSON.stringify(visibleCategories));
 }
 
-// カテゴリ状態をセッションストレージから復元
 function restoreCategoryState() {
 	if (typeof window === "undefined") return;
 	const saved = sessionStorage.getItem(CATEGORY_STATE_KEY);
 	if (saved) {
 		try {
 			const obj = JSON.parse(saved);
-			// 本来のカテゴリが変わってる可能性もあるので、現在あるものだけ適用
 			for (const cat of allCategories) {
 				if (obj[cat] !== undefined) visibleCategories[cat] = obj[cat];
 			}
@@ -54,7 +50,7 @@ async function fetchSites() {
 
 		groupSites();
 		initializeVisibleCategories();
-		restoreCategoryState(); // ←追加
+		restoreCategoryState();
 	} catch (e: any) {
 		error = e.message;
 	} finally {
@@ -92,7 +88,6 @@ onMount(() => {
 	fetchSites();
 });
 
-// カテゴリ選択切り替え時に保存
 function toggleCategory(cat) {
 	visibleCategories[cat] = !visibleCategories[cat];
 	saveCategoryState();
@@ -106,7 +101,7 @@ beforeNavigateUnsubscribe = beforeNavigate(({ from, to, type }) => {
 				positions[currentFullUrl] = scrollY;
 				return positions;
 			});
-			saveCategoryState(); // ←追加：離脱時にも保存
+			saveCategoryState();
 		}
 	}
 });
