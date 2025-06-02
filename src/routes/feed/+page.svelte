@@ -113,10 +113,8 @@ onDestroy(() => {
 });
 </script>
 
-<div
-  class="sticky top-[64px] z-10 bg-slate-900/90 dark:bg-slate-900/90 shadow mb-2 w-full"
->
-  <div class="flex justify-center items-center gap-4 py-2">
+<div class="sticky top-[64px] z-10 shadow w-full">
+  <div class="flex justify-center items-center gap-4 py-2 mb-4">
     <button
       on:click={() => cardStyle = "image"}
       class="rounded-full p-2 flex items-center justify-center
@@ -150,7 +148,8 @@ onDestroy(() => {
   </div>
 </div>
 
-<div class="py-1">
+<!-- 記事リスト -->
+<div class="pt-1"> <!-- py-1→pt-1（上だけ）にすることで下余白はゼロ -->
   {#if loading}
     <p class="text-center text-slate-600 dark:text-slate-300">読み込み中...</p>
   {:else if errorMessage}
