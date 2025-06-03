@@ -5,19 +5,12 @@ import { page } from "$app/stores";
 import { get } from "svelte/store";
 import { scrollPositions } from "$lib/stores/scrollStore";
 import { goto } from "$app/navigation";
+import ArticleCard from "$lib/components/ArticleCard.svelte";
+import type { ArticleWithSiteName } from "$lib/types";
+import dayjs from "dayjs";
 
-type Article = {
-	id: number;
-	title: string;
-	url: string;
-	site_title?: string;
-	category?: string;
-	thumbnail?: string;
-	pub_date?: string;
-};
-
-let articles: Article[] = [];
-let filteredArticles: Article[] = [];
+let articles: ArticleWithSiteName[] = [];
+let filteredArticles: ArticleWithSiteName[] = [];
 let searchTerm = "";
 let isLoading = true;
 
@@ -56,9 +49,9 @@ $: filteredArticles = !searchTerm
 		);
 
 // 記事詳細へジャンプ
-function openArticle(article: Article) {
-	goto(`/articles/${article.id}`);
-}
+// function openArticle(article: ArticleWithSiteName) {
+// goto(article.url);
+// }
 
 // 離脱時にスクロール位置保存
 beforeNavigateUnsubscribe = beforeNavigate(({ from, to, type }) => {
@@ -78,7 +71,12 @@ onDestroy(() => {
 	if (pageStoreUnsubscribe) pageStoreUnsubscribe();
 	if (beforeNavigateUnsubscribe) beforeNavigateUnsubscribe();
 });
+
+const formattedDate = (rawData: string) => {
+	return dayjs(rawData).tz().format("YYYY/MM/DD HH:mm");
+};
 </script>
+
 
 <div class="max-w-2xl mx-auto py-6 px-3">
 	<h2 class="text-2xl font-bold mb-4 text-center text-slate-800 dark:text-white">記事タイトル検索</h2>
@@ -104,21 +102,28 @@ onDestroy(() => {
 			<ul class="space-y-3">
 				{#each filteredArticles as article (article.id)}
 					<li>
-						<button
+            <a href={article.url} rel="noopener noreferrer"
 							class="w-full text-left flex items-center gap-3 bg-slate-200 dark:bg-slate-700 rounded-lg p-3 shadow hover:bg-emerald-100 dark:hover:bg-emerald-800 transition"
-							on:click={() => openArticle(article)}
 						>
-							{#if article.thumbnail}
-								<img src={article.thumbnail} alt="thumb" class="w-14 h-14 rounded-lg object-cover flex-shrink-0" />
-							{/if}
-							<div class="flex-1 min-w-0">
-								<div class="font-bold text-lg text-slate-900 dark:text-white truncate">{article.title}</div>
-								<div class="text-xs text-slate-500 dark:text-slate-300 truncate">{article.site_title} {article.category ? `｜${article.category}` : ""}</div>
-								{#if article.pub_date}
-									<div class="text-xs text-slate-400">{article.pub_date}</div>
-								{/if}
-							</div>
-						</button>
+								<img src={article.thumbnail || '/favicon.png'} alt="thumb" class="w-14 h-14 rounded-lg object-cover flex-shrink-0" />
+                <div class="flex min-w-0 flex-1 flex-col p-1.5 text-sm">
+                  <div class="flex items-center gap-x-2 gap-y-1 text-xs mb-1 w-full min-w-0">
+                    <span class="text-slate-500 dark:text-slate-400 whitespace-nowrap flex-shrink-0">{formattedDate(article.pub_date)}</span>
+                      <span
+                        class="whitespace-nowrap truncate max-w-[120px] rounded-full bg-slate-200 dark:bg-slate-600 px-2 py-0.5 text-xs font-medium text-slate-700 dark:text-slate-300"
+                        title={article.site_title}
+                      >
+                        {article.site_title}
+                      </span>
+                  </div>
+                  <h3
+                    class="text-sm font-semibold text-slate-800 dark:text-slate-100 line-clamp-2"
+                    title={article.title}
+                  >
+                    {article.title || "タイトルなし"}
+                  </h3>
+                </div>
+              </a>
 					</li>
 				{/each}
 			</ul>

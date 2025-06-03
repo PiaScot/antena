@@ -1,16 +1,7 @@
 <script lang="ts">
 import { onMount } from "svelte";
 import { Trash2, Plus, Pen } from "lucide-svelte";
-
-type Site = {
-	id: number;
-	url: string;
-	title: string;
-	rss: string;
-	category: string;
-	last_access: string;
-	domain?: string;
-};
+import type { Site } from "$lib/types";
 
 let sites: Site[] = [];
 let filteredSites: Site[] = [];
@@ -178,6 +169,15 @@ onMount(fetchSites);
               placeholder="サイト名"
               autocomplete="off"
             />
+            <select
+              bind:value={editCategory}
+              class="block w-full mb-2 rounded border-emerald-400 bg-white dark:bg-slate-900 text-slate-900 dark:text-white px-2 py-1 border"
+            >
+              <option value="">カテゴリ選択</option>
+              {#each categories as cat}
+                <option value={cat}>{cat}</option>
+              {/each}
+            </select>
             <input
               type="text"
               bind:value={editUrl}
@@ -190,15 +190,7 @@ onMount(fetchSites);
               class="block w-full mb-2 rounded border-emerald-400 bg-white dark:bg-slate-900 text-slate-900 dark:text-white px-2 py-1 border"
               placeholder="RSS"
             />
-            <select
-              bind:value={editCategory}
-              class="block w-full mb-2 rounded border-emerald-400 bg-white dark:bg-slate-900 text-slate-900 dark:text-white px-2 py-1 border"
-            >
-              <option value="">カテゴリ選択</option>
-              {#each categories as cat}
-                <option value={cat}>{cat}</option>
-              {/each}
-            </select>
+
             <div class="flex gap-3">
               <button on:click={() => commitEdit(idx)} class="bg-emerald-600 text-white px-4 py-2 rounded hover:bg-emerald-700 flex-1">√ 保存</button>
               <button on:click={cancelEdit} class="bg-gray-300 text-gray-800 px-4 py-2 rounded hover:bg-gray-400 dark:bg-gray-600 dark:text-white flex-1">✕ キャンセル</button>
@@ -206,10 +198,16 @@ onMount(fetchSites);
           {:else}
             <div class="flex items-center justify-between gap-2">
               <div>
-                <div class="font-bold text-xl mb-1 text-slate-900 dark:text-white">{site.title}</div>
+                <div class="flex items-center gap-2 mb-1">
+                  <div class="font-bold text-xl text-slate-900 dark:text-white">{site.title}</div>
+                  {#if site.category}
+                    <span class="inline-block bg-emerald-200 dark:bg-emerald-800 text-emerald-700 dark:text-emerald-200 px-2 py-0.5 rounded-full text-xs font-semibold align-middle">
+                      {site.category}
+                    </span>
+                  {/if}
+                </div>
                 <div class="text-base mb-1 text-slate-700 dark:text-slate-200 break-all">{site.url}</div>
                 <div class="text-sm mb-1 text-slate-500 dark:text-slate-400 break-all">{site.rss}</div>
-                <span class="inline-block bg-emerald-200 dark:bg-emerald-800 text-emerald-700 dark:text-emerald-200 px-2 py-1 rounded-full text-sm font-semibold">{site.category}</span>
               </div>
               <button
                 class="bg-blue-500 hover:bg-blue-700 text-white rounded-full p-2 ml-2"

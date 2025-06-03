@@ -19,7 +19,7 @@ const categories = [
 </script>
 
 <div class="max-w-2xl mx-auto">
-  <div class="grid grid-cols-2 gap-2 mt-8">
+  <div class="grid grid-cols-2 gap-2 mt-8 mx-4">
     {#each categories.filter(c => c.visible) as cat}
       <a
         href={"/feed?category=" + cat.cat}
@@ -34,19 +34,3 @@ const categories = [
 </div>
 
 <Footer />
-
-<style>
-.icon-btn {
-  border-radius: 9999px;
-  padding: 0.5rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition-property: background, box-shadow, border-color, color, fill, stroke, opacity;
-  transition-duration: 150ms;
-  outline: none;
-}
-.icon-btn:focus {
-  box-shadow: 0 0 0 2px #34d399;
-}
-</style>

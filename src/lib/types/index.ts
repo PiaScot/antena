@@ -1,3 +1,5 @@
+// db defined schema
+
 export interface Site {
   id: number;
   url: string;
@@ -19,4 +21,17 @@ export interface Article {
   content: string;
   pub_date: string;
   thumbnail: string;
+}
+
+// for display frontend data
+export interface ArticleWithSiteName {
+  id: number;
+  site_id: number;
+  title: string;
+  site_title: string;
+  url: string;
+  category: string;
+  thumbnail: string;
+  pub_date: string;
+  content: string;
 }

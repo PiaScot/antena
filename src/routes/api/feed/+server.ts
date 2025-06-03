@@ -4,6 +4,8 @@ import type { Article } from "$lib/types";
 import { supabase } from "$lib/server/supabase";
 import { ARTICLE_TABLE } from "$env/static/private";
 
+const batchLength = 300;
+
 export const GET: RequestHandler = async ({ url }) => {
   const category = url.searchParams.get("category") || "all";
   const siteId = url.searchParams.get("site");
@@ -18,15 +20,21 @@ export const GET: RequestHandler = async ({ url }) => {
         .select("*, site:antena_sites(title)", { count: "exact" })
         .eq("site_id", Number(siteId))
         .order("pub_date", { ascending: false })
-        .limit(500);
-    } else if (category === "all") {
-      // ────────── カテゴリ all のときだけ別グループで in ──────────
+        .limit(batchLength);
+    } else if (category === "art") {
+      // ────────── カテゴリ art のときだけ別グループで in ──────────
       result = await supabase
         .from(ARTICLE_TABLE)
         .select("*, site:antena_sites(title)", { count: "exact" })
         .in("category", ["2d", "real"])
         .order("pub_date", { ascending: false })
-        .limit(500);
+        .limit(batchLength);
+    } else if (category === "all") {
+      result = await supabase
+        .from(ARTICLE_TABLE)
+        .select("*, site:antena_sites(title)", { count: "exact" })
+        .order("pub_date", { ascending: false })
+        .limit(batchLength);
     } else {
       // ────────── 特定カテゴリ指定あり ──────────
       result = await supabase
@@ -34,7 +42,7 @@ export const GET: RequestHandler = async ({ url }) => {
         .select("*, site:antena_sites(title)", { count: "exact" })
         .eq("category", category)
         .order("pub_date", { ascending: false })
-        .limit(500);
+        .limit(batchLength);
     }
 
     const { data: rows, count, error } = result;
