@@ -1,20 +1,12 @@
 <script lang="ts">
-import Footer from "$lib/components/Footer.svelte";
-
-function generateId() {
-	return crypto.randomUUID
-		? crypto.randomUUID()
-		: Math.random().toString(36).slice(2);
-}
-
 const categories = [
-	{ id: generateId(), label: "まとめNEWS", cat: "news", visible: true },
-	{ id: generateId(), label: "雑談", cat: "chat", visible: true },
-	{ id: generateId(), label: "IT・ガジェット", cat: "it", visible: true },
-	{ id: generateId(), label: "面白・衝撃", cat: "orckt", visible: true },
-	{ id: generateId(), label: "ALL", cat: "all", visible: true },
-	{ id: generateId(), label: "REAL", cat: "real", visible: true },
-	{ id: generateId(), label: "2D", cat: "2d", visible: true },
+	{ label: "まとめNEWS", cat: "news", visible: true },
+	{ label: "雑談", cat: "chat", visible: true },
+	{ label: "IT・ガジェット", cat: "it", visible: true },
+	{ label: "面白・衝撃", cat: "orckt", visible: true },
+	{ label: "ALL", cat: "all", visible: true },
+	{ label: "REAL", cat: "real", visible: true },
+	{ label: "2D", cat: "2d", visible: true },
 ];
 </script>
 
@@ -32,5 +24,3 @@ const categories = [
     {/each}
   </div>
 </div>
-
-<Footer />

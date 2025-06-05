@@ -18,7 +18,7 @@ $: {
 		// ページデータが<slot />経由で渡されている場合
 		// 通常はdata.articleとしているはず
 		// $page.dataは常に存在する保証はないのでguard
-		article = $page.data && $page.data.article ? $page.data.article : null;
+		article = $page?.data.article ? $page?.data.article : null;
 	} else {
 		article = null;
 	}

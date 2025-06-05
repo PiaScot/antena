@@ -1,9 +1,11 @@
 // src/routes/api/feed/+server.ts
 import type { RequestHandler } from "@sveltejs/kit";
-import type { Article } from "$lib/types";
-import { supabase } from "$lib/server/supabase";
-import { ARTICLE_TABLE } from "$env/static/private";
-
+import {
+  fetchAllArticles,
+  fetchArticlesByCategory,
+  fetchArticlesBySite,
+  fetchArticlesForArtCategory,
+} from "$lib/api/db/article";
 const batchLength = 300;
 
 export const GET: RequestHandler = async ({ url }) => {
@@ -12,71 +14,24 @@ export const GET: RequestHandler = async ({ url }) => {
 
   try {
     let result;
-
     if (siteId) {
-      // ────────── site 指定あり ──────────
-      result = await supabase
-        .from(ARTICLE_TABLE)
-        .select("*, site:antena_sites(title)", { count: "exact" })
-        .eq("site_id", Number(siteId))
-        .order("pub_date", { ascending: false })
-        .limit(batchLength);
+      result = await fetchArticlesBySite(siteId);
     } else if (category === "art") {
-      // ────────── カテゴリ art のときだけ別グループで in ──────────
-      result = await supabase
-        .from(ARTICLE_TABLE)
-        .select("*, site:antena_sites(title)", { count: "exact" })
-        .in("category", ["2d", "real"])
-        .order("pub_date", { ascending: false })
-        .limit(batchLength);
+      result = await fetchArticlesForArtCategory();
     } else if (category === "all") {
-      result = await supabase
-        .from(ARTICLE_TABLE)
-        .select("*, site:antena_sites(title)", { count: "exact" })
-        .order("pub_date", { ascending: false })
-        .limit(batchLength);
+      result = await fetchAllArticles();
     } else {
-      // ────────── 特定カテゴリ指定あり ──────────
-      result = await supabase
-        .from(ARTICLE_TABLE)
-        .select("*, site:antena_sites(title)", { count: "exact" })
-        .eq("category", category)
-        .order("pub_date", { ascending: false })
-        .limit(batchLength);
+      result = await fetchArticlesByCategory(category);
     }
-
-    const { data: rows, count, error } = result;
-    if (error) throw error;
-    if (!rows) {
-      return new Response(
-        JSON.stringify({ error: "記事が見つかりませんでした" }),
-        { status: 404, headers: { "Content-Type": "application/json" } },
-      );
-    }
-
-    // フロントが使いやすいようにフラットにマップ
-    const articles = rows.map((r) => ({
-      id: r.id,
-      site_id: r.site_id,
-      site_title: r.site?.title ?? null,
-      title: r.title,
-      url: r.url,
-      category: r.category,
-      content: r.content,
-      pub_date: r.pub_date,
-      thumbnail: r.thumbnail,
-    }));
-
-    return new Response(JSON.stringify({ articles, count }), {
+    // result = { articles, count }
+    return new Response(JSON.stringify(result), {
       status: 200,
       headers: {
         "Content-Type": "application/json",
-        // 1時間キャッシュして、最大10分の stale-while-revalidate
         "Cache-Control": "public, max-age=3600, stale-while-revalidate=600",
       },
     });
   } catch (err: any) {
-    console.error(err);
     return new Response(JSON.stringify({ error: err.message }), {
       status: 500,
       headers: { "Content-Type": "application/json" },

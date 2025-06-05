@@ -20,9 +20,9 @@ const defaultCategories: Category[] = [
 	{ id: "2d", label: "2D", visible: true },
 ];
 
-let categories: Category[] = [...defaultCategories];
+export let categories: Category[] = [...defaultCategories];
 let originalCategories: Category[] = [];
-let gridCols: number = 2;
+let gridCols = 2;
 
 // 変更前の状態を保存
 onMount(() => {
@@ -62,7 +62,7 @@ function cancelEdit() {
 <div class="max-w-xl mx-auto p-4">
   <h2 class="text-2xl font-bold mb-6 text-center text-slate-800 dark:text-white">ホームカテゴリ編集</h2>
 
-  <!-- レイアウトコントロール -->
+  <!-- layout control -->
   <div class="flex justify-center items-center gap-4 mb-6">
     <span class="text-slate-700 dark:text-slate-200 font-semibold">グリッド列数</span>
     <div class="flex gap-1">

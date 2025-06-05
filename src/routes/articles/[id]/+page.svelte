@@ -1,6 +1,8 @@
 <!-- src/routes/articles/[id]/+page.svelte -->
 <script lang="ts">
-export let data;
+import type { ArticleWithSiteName } from "$lib/types";
+
+export let data: { article: ArticleWithSiteName };
 const article = data.article;
 </script>
 

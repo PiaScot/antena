@@ -2,23 +2,17 @@
 import { page } from "$app/stores";
 import { Bookmark, BookmarkCheck } from "lucide-svelte";
 
-export let article: any = null; // 記事詳細ページなら全データ
+export let article: any = null;
 
-let currentPath = "";
 let isBookmarked = false;
 let bookmarkLoading = false;
 
-// ページURL取得
 $: currentPath = $page.url.pathname;
 
-// 記事詳細ページだったらIDがあるか判定
 function isArticleDetail() {
-	// 例: /articles/123
 	return /^\/articles\/\d+/.test(currentPath) && article?.id;
 }
 
-// --- ここが肝心！ ---
-// articleが変わるたびに状態チェック
 $: (async () => {
 	if (isArticleDetail()) {
 		try {
@@ -33,7 +27,6 @@ $: (async () => {
 	}
 })();
 
-// ブックマーク追加/削除
 async function toggleBookmark() {
 	if (!article?.id) return;
 	bookmarkLoading = true;
@@ -42,7 +35,7 @@ async function toggleBookmark() {
 			await fetch(`/api/bookmark?id=${article.id}`, { method: "DELETE" });
 			isBookmarked = false;
 		} else {
-			await fetch(`/api/bookmark`, {
+			await fetch("/api/bookmark", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify(article),

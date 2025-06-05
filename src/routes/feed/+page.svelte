@@ -5,17 +5,15 @@ import { beforeNavigate } from "$app/navigation";
 import { page } from "$app/stores";
 import { get } from "svelte/store";
 import ArticleCard from "$lib/components/ArticleCard.svelte";
-import ArticleCardSimple from "$lib/components/ArticleCardSimple.svelte";
-import type { Article } from "$lib/types";
+import type { Article, ArticleWithSiteName } from "$lib/types";
 import { GalleryHorizontalEnd, List } from "lucide-svelte";
 
 import { scrollPositions } from "$lib/stores/scrollStore";
 
-let articles: Article[] = [];
+let articles: ArticleWithSiteName[] = [];
 let loading = true;
 let errorMessage: string | null = null;
 
-// クエリから取ってくる値
 let categoryFromQuery = "all";
 let siteFromQuery: string | null = null;
 
@@ -65,12 +63,6 @@ onMount(async () => {
 		const savedScrollY = $scrollPositions[currentFullUrl];
 		if (typeof savedScrollY === "number") {
 			window.scrollTo(0, savedScrollY);
-
-			// オプション: 一度復元したらストアから削除する場合
-			// scrollPositions.update((positions) => {
-			// 	delete positions[currentFullUrl];
-			// 	return positions;
-			// });
 		}
 	}
 });
@@ -97,7 +89,7 @@ onDestroy(() => {
 });
 </script>
 
-<div class="sticky top-[56px] bg-emerald-400/10 dark:bg-slate-900/90 max-w-2xl mx-auto py-3 px-3">
+<div class="bg-emerald-400/10 dark:bg-slate-900/90 max-w-2xl mx-auto py-3 px-3">
   <div class="flex justify-center items-center gap-4 py-2">
     <button
       on:click={() => cardStyle = "image"}
@@ -144,11 +136,7 @@ onDestroy(() => {
     <div class="mx-auto w-full max-w-screen-lg px-1 sm:px-2">
       <div class="space-y-3">
         {#each articles as article (article.url)}
-          {#if cardStyle === "image"}
-            <ArticleCard {article} />
-          {:else}
-            <ArticleCardSimple {article} />
-          {/if}
+          <ArticleCard {article} withImage={cardStyle === "image"} />
         {/each}
       </div>
     </div>

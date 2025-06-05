@@ -22,11 +22,11 @@ if (browser) {
 export type FontSizeValue = "small" | "medium" | "large";
 
 // フォントサイズのストア (初期値は 'medium')
-export const fontSize = writable<FontSizeValue>("small");
+export const fontSize = writable<FontSizeValue>("medium");
 
 // フォントサイズの値と対応するTailwind CSSクラスのマッピング
 export const fontSizeClassMap: Record<FontSizeValue, string> = {
-  small: "text-sm", // Tailwind CSSのクラス (例: font-size: 0.875rem; line-height: 1.25rem;)
-  medium: "text-base", // Tailwind CSSのクラス (例: font-size: 1rem; line-height: 1.5rem;)
-  large: "text-xl", // Tailwind CSSのクラス (例: font-size: 1.25rem; line-height: 1.75rem;)
+  small: "text-xs", // 0.75rem (12px)
+  medium: "text-sm", // 0.875rem (14px)
+  large: "text-lg", // 1.125rem (18px)
 };

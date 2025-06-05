@@ -1,61 +1,34 @@
 import type { RequestHandler } from "@sveltejs/kit";
 import { supabase } from "$lib/server/supabase";
 import { BOOKMARK_TABLE } from "$env/static/private";
+import {
+  deleteBookmark,
+  getBookmark,
+  getBookmarks,
+  upsertBookmark,
+} from "$lib/api/db/bookmark";
+import type { Article } from "$lib/types";
 
 // --- ブックマーク取得 ---
 export const GET: RequestHandler = async ({ url }) => {
   const id = url.searchParams.get("id");
   try {
     if (id) {
-      // 1件だけ状態取得
-      const { data: rows, error } = await supabase
-        .from(BOOKMARK_TABLE)
-        .select("*")
-        .eq("id", id)
-        .limit(1);
-
-      if (error) throw error;
+      const { bookmarked } = await getBookmark(id);
       return new Response(
-        JSON.stringify({ bookmarked: rows && rows.length > 0 }),
+        JSON.stringify({ bookmarked }),
         { status: 200, headers: { "Content-Type": "application/json" } },
       );
-    } else {
-      // 全件リスト
-      const { data: rows, error, count } = await supabase
-        .from(BOOKMARK_TABLE)
-        .select("*", { count: "exact" })
-        .order("pub_date", { ascending: false })
-        .limit(200);
-
-      if (error) throw error;
-      if (!rows) {
-        return new Response(
-          JSON.stringify({ error: "記事が見つかりませんでした" }),
-          { status: 404, headers: { "Content-Type": "application/json" } },
-        );
-      }
-
-      // site_titleをJOINする場合はリレーション設定要（省略）
-      const articles = rows.map((r) => ({
-        id: r.id,
-        site_id: r.site_id,
-        site_title: r.site?.title ?? null,
-        title: r.title,
-        url: r.url,
-        category: r.category,
-        content: r.content,
-        pub_date: r.pub_date,
-        thumbnail: r.thumbnail,
-      }));
-
-      return new Response(JSON.stringify({ articles, count }), {
-        status: 200,
-        headers: {
-          "Content-Type": "application/json",
-          "Cache-Control": "public, max-age=3600, stale-while-revalidate=600",
-        },
-      });
     }
+
+    const { articles, count } = await getBookmarks();
+    return new Response(JSON.stringify({ articles, count }), {
+      status: 200,
+      headers: {
+        "Content-Type": "application/json",
+        "Cache-Control": "public, max-age=3600, stale-while-revalidate=600",
+      },
+    });
   } catch (err: any) {
     console.error(err);
     return new Response(JSON.stringify({ error: err.message }), {
@@ -68,35 +41,9 @@ export const GET: RequestHandler = async ({ url }) => {
 // --- ブックマーク登録・上書き ---
 export const POST: RequestHandler = async ({ request }) => {
   try {
-    const body = await request.json();
-    // 必須フィールド
-    const { id, url, title, category, site_id, content, pub_date, thumbnail } =
-      body;
-    if (!id || !url || !title) {
-      return new Response(
-        JSON.stringify({ error: "必須情報が不足しています (id, url, title)" }),
-        {
-          status: 400,
-          headers: { "Content-Type": "application/json" },
-        },
-      );
-    }
-    // DB登録
-    const { error } = await supabase
-      .from(BOOKMARK_TABLE)
-      .upsert([{
-        id,
-        url,
-        title,
-        category,
-        site_id,
-        content,
-        pub_date,
-        thumbnail,
-        // created_atはDB側で自動セット
-      }]);
-    if (error) throw error;
-    return new Response(JSON.stringify({ ok: true }), {
+    const article: Article = await request.json();
+    const ok = await upsertBookmark(article);
+    return new Response(JSON.stringify(ok), {
       status: 200,
       headers: { "Content-Type": "application/json" },
     });
@@ -111,19 +58,18 @@ export const POST: RequestHandler = async ({ request }) => {
 // --- ブックマーク削除 ---
 export const DELETE: RequestHandler = async ({ url }) => {
   const id = url.searchParams.get("id");
-  if (!id) {
-    return new Response(
-      JSON.stringify({ error: "id is required" }),
-      { status: 400, headers: { "Content-Type": "application/json" } },
-    );
-  }
   try {
-    const { error } = await supabase
-      .from(BOOKMARK_TABLE)
-      .delete()
-      .eq("id", id);
-    if (error) throw error;
-    return new Response(JSON.stringify({ ok: true }), {
+    if (!id) {
+      return new Response(
+        JSON.stringify({ error: "id parameter is required" }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        },
+      );
+    }
+    const result = await deleteBookmark(id);
+    return new Response(JSON.stringify(result), {
       status: 200,
       headers: { "Content-Type": "application/json" },
     });

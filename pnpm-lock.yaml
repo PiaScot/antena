@@ -105,6 +105,9 @@ importers:
       vitest:
         specifier: ^3.0.0
         version: 3.1.1(@types/node@22.14.0)(jiti@2.4.2)(jsdom@26.0.0)(lightningcss@1.29.2)
+      xml:
+        specifier: link:jsr:@libs/xml
+        version: link:jsr:@libs/xml
 
 packages:
 

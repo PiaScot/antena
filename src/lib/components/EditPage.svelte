@@ -1,7 +1,7 @@
 <script lang="ts">
 import { onMount } from "svelte";
-import { Trash2, Plus, Pen } from "lucide-svelte";
-import type { Site } from "$lib/types";
+import { Trash2, Plus, Pen, Search } from "lucide-svelte";
+import type { ArticleWithSiteName, Site } from "$lib/types";
 
 let sites: Site[] = [];
 let filteredSites: Site[] = [];
@@ -9,12 +9,23 @@ let categories: string[] = [];
 let searchTerm = "";
 let isLoading = true;
 
+// 編集用
 let editIdx: number | null = null;
 let editTitle = "";
 let editUrl = "";
 let editRss = "";
 let editCategory = "";
 
+// 新規追加用
+let inputUrl = "";
+let inputCategory = "";
+let fetchError = "";
+let fetchedSite: Site | null = null;
+let fetchedArticles: ArticleWithSiteName[] | null = null;
+let isFetching = false;
+let addSuccessMsg = "";
+
+// 新カテゴリ
 let newCategory = "";
 let showDeleteCatConfirm = false;
 let deleteCatIdx: number | null = null;
@@ -30,16 +41,79 @@ async function fetchSites() {
 	isLoading = false;
 }
 
-// 検索用reactive
-$: filteredSites = !searchTerm
-	? sites
-	: sites.filter(
-			(s) =>
-				s.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-				s.url?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-				s.rss?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-				s.category?.toLowerCase().includes(searchTerm.toLowerCase()),
-		);
+onMount(fetchSites);
+
+// サイト検索→サイト情報取得API
+async function fetchSiteInfo() {
+	fetchError = "";
+	fetchedSite = null;
+	addSuccessMsg = "";
+	if (!inputUrl || !inputCategory) {
+		fetchError = "URL/RSSとカテゴリを入力してください";
+		return;
+	}
+	isFetching = true;
+	try {
+		const res = await fetch("/api/fetch-site-info", {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ url: inputUrl, category: inputCategory }),
+		});
+		const data = await res.json();
+
+		if (!res.ok && data.error) {
+			fetchError = data.error;
+			isFetching = false;
+			return;
+		}
+
+		fetchedSite = data.site;
+		fetchedArticles = data.articles;
+	} catch (e) {
+		fetchError = e instanceof Error ? e.message : String(e);
+	}
+	isFetching = false;
+}
+
+// 新規取得内容をクリア
+function clearFetched() {
+	fetchedSite = null;
+	inputUrl = "";
+	inputCategory = "";
+	fetchError = "";
+}
+
+async function addSite() {
+	if (!fetchedSite) return;
+	try {
+		const { id, ...sitePayload } = fetchedSite;
+
+		const res = await fetch("/api/register-site", {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify(sitePayload),
+		});
+
+		const data = await res.json();
+
+		if (res.ok && data.ok) {
+			addSuccessMsg = "サイトを追加しました";
+			await fetchSites();
+			clearFetched();
+
+			// TODO
+			// fetch("/api/crawl-articles-once", {
+			// 	method: "POST",
+			// 	headers: { "Content-Type": "application/json" },
+			// 	body: JSON.stringify({ siteID: data.id, rawArticles: fetchedArticles }),
+			// });
+		} else {
+			addSuccessMsg = `サイトの追加に失敗しました:   ${data?.error || "不明なエラー"}`;
+		}
+	} catch (e) {
+		addSuccessMsg = `サイトの追加に失敗しました: ${e instanceof Error ? e.message : String(e)}`;
+	}
+}
 
 function startEdit(idx: number) {
 	editIdx = idx;
@@ -50,18 +124,31 @@ function startEdit(idx: number) {
 	editCategory = s.category;
 }
 
-function commitEdit(idx: number) {
-	const id = filteredSites[idx].id;
-	const i = sites.findIndex((s) => s.id === id);
-	if (i !== -1) {
-		sites[i] = {
-			...sites[i],
+async function commitEdit(idx: number) {
+	const res = await fetch("/api/", {
+		method: "PATCH",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify({
+			id: idx,
 			title: editTitle,
 			url: editUrl,
 			rss: editRss,
 			category: editCategory,
-		};
+		}),
+	});
+	const data = await res.json();
+	if (!res.ok) {
+		alert(data?.error || "更新失敗");
+		editIdx = null;
+		return;
 	}
+	sites[i] = {
+		...sites[i],
+		title: editTitle,
+		url: editUrl,
+		rss: editRss,
+		category: editCategory,
+	};
 	editIdx = null;
 }
 
@@ -94,10 +181,103 @@ function cancelDelete() {
 	deleteCatIdx = null;
 }
 
-onMount(fetchSites);
+// 検索用reactive
+$: filteredSites = !searchTerm
+	? sites
+	: sites.filter(
+			(s) =>
+				s.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+				s.url?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+				s.rss?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+				s.category?.toLowerCase().includes(searchTerm.toLowerCase()),
+		);
 </script>
 
 <div class="max-w-xl mx-auto p-4">
+  <!-- 新規サイト追加 -->
+  <div class="mb-6 p-4 bg-slate-800 rounded-xl shadow max-w-xl mx-auto">
+    <h3 class="text-lg font-semibold mb-2 text-white">新規サイト追加</h3>
+    {#if addSuccessMsg}
+      <div class="mb-2 text-green-500">{addSuccessMsg}</div>
+    {/if}
+    {#if !fetchedSite}
+      <div class="flex flex-col gap-2">
+        <input
+          class="px-3 py-2 rounded border focus:outline-none"
+          type="text"
+          placeholder="サイトURL または RSS URL"
+          bind:value={inputUrl}
+          autocomplete="off"
+        />
+        <select
+          style="background-color: #232946; color: #fff;"
+          class="px-3 py-2 rounded border focus:outline-none"
+          bind:value={inputCategory}
+        >
+          <option value="">カテゴリ選択</option>
+          {#each categories as cat}
+            <option value={cat}>{cat}</option>
+          {/each}
+        </select>
+        {#if fetchError}
+          <div class="text-red-500 text-sm">{fetchError}</div>
+        {/if}
+        <button
+          class="mt-2 px-4 py-2 rounded bg-emerald-600 text-white hover:bg-emerald-700 flex items-center justify-center"
+          type="button"
+          on:click={fetchSiteInfo}
+          disabled={isFetching}
+        >
+          <Search class="w-4 h-4 mr-2" />
+          検索
+        </button>
+      </div>
+    {:else}
+      <div class="bg-slate-100 dark:bg-slate-700 rounded-xl p-3 mb-2">
+        <div class="mb-1"><span class="font-semibold">サイト名:</span> {fetchedSite.title}</div>
+        <div class="mb-1"><span class="font-semibold">URL:</span> {fetchedSite.url}</div>
+        <div class="mb-1"><span class="font-semibold">RSS:</span> {fetchedSite.rss}</div>
+        <div class="mb-1"><span class="font-semibold">カテゴリ:</span> {fetchedSite.category}</div>
+        <div class="mb-1"><span class="font-semibold">ドメイン:</span> {fetchedSite.domain}</div>
+        <div class="mb-1"><span class="font-semibold">更新間隔:</span> {fetchedSite.duration_access} 秒</div>
+      {#if fetchedArticles && fetchedArticles.length > 0}
+              <div class="mb-2 mt-4">
+                <div class="font-semibold text-base mb-1 text-slate-800 dark:text-white">最新記事</div>
+                <ul class="list-disc ml-4">
+                  {#each fetchedArticles.slice(0,5) as article}
+                    <li class="mb-1">
+                      <a
+                        href={article.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="text-emerald-700 dark:text-emerald-300 underline hover:text-emerald-500"
+                      >
+                        {article.title}
+                      </a>
+                      <span class="ml-2 text-xs text-slate-600 dark:text-slate-300">
+                        {article.pub_date}
+                      </span>
+                    </li>
+                  {/each}
+                </ul>
+              </div>
+            {/if}
+        <div class="flex gap-2 mt-4">
+          <button
+            class="px-4 py-2 rounded bg-emerald-600 text-white hover:bg-emerald-700"
+            type="button"
+            on:click={addSite}
+          >追加</button>
+          <button
+            class="px-4 py-2 rounded bg-gray-400 text-white hover:bg-gray-600"
+            type="button"
+            on:click={clearFetched}
+          >キャンセル</button>
+        </div>
+      </div>
+    {/if}
+  </div>
+
   <h2 class="text-2xl font-bold mb-4 text-center text-slate-800 dark:text-white">サイト一覧・カテゴリ編集</h2>
 
   <!-- カテゴリ操作 -->
@@ -170,6 +350,7 @@ onMount(fetchSites);
               autocomplete="off"
             />
             <select
+              style="background-color: #232946; color: #fff;"
               bind:value={editCategory}
               class="block w-full mb-2 rounded border-emerald-400 bg-white dark:bg-slate-900 text-slate-900 dark:text-white px-2 py-1 border"
             >
@@ -190,7 +371,6 @@ onMount(fetchSites);
               class="block w-full mb-2 rounded border-emerald-400 bg-white dark:bg-slate-900 text-slate-900 dark:text-white px-2 py-1 border"
               placeholder="RSS"
             />
-
             <div class="flex gap-3">
               <button on:click={() => commitEdit(idx)} class="bg-emerald-600 text-white px-4 py-2 rounded hover:bg-emerald-700 flex-1">√ 保存</button>
               <button on:click={cancelEdit} class="bg-gray-300 text-gray-800 px-4 py-2 rounded hover:bg-gray-400 dark:bg-gray-600 dark:text-white flex-1">✕ キャンセル</button>
