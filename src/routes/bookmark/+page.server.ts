@@ -1,5 +1,5 @@
 // src/routes/bookmark/+page.server.ts
-import { getBookmarks } from "$lib/api/bookmark";
+import { getBookmarks } from "$lib/api/db/bookmark";
 import type { PageServerLoad } from "./$types";
 import type { ArticleWithSiteName } from "$lib/types";
 
