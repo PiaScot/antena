@@ -36,7 +36,7 @@ export const GET: RequestHandler = async ({ url }) => {
   }
 };
 
-// --- POST --- サイト新規登録 or RSS解析� け
+// --- POST --- サイト新規登録 or RSS解析だけ
 export const POST: RequestHandler = async ({ request }) => {
   try {
     const body = await request.json();
@@ -44,7 +44,7 @@ export const POST: RequestHandler = async ({ request }) => {
     if (body.action === "fetch-site-info") {
       const { url, category } = body;
       if (!url || !category) {
-        return json({ error: "URLとカテゴリは必� �です" }, { status: 400 });
+        return json({ error: "URLとカテゴリは必須です" }, { status: 400 });
       }
       return await handleFetchSiteInfo(url, category);
     }

@@ -10,8 +10,12 @@ import {
 } from "$lib/stores/categoryStore";
 import type { Category } from "$lib/types";
 
+// --- State ---
+// ストアから直接リアクティブな値を参照
 const categories = $derived($categoriesStore);
-let displayCategories = $state<Category[]>([]);
+
+// このページ固有の状態
+let displayCategories = $state<Category[]>([]); // 表示・並び替え用のローカルコピー
 let gridCols = $state(2);
 let categoryState = $state({
 	newId: "",
@@ -23,7 +27,7 @@ let categoryState = $state({
 });
 
 // --- Effects ---
-// ストアのカテゴリ情� �が変更されたら、このページの表示用データも更新する
+// ストアのカテゴリ情報が変更されたら、このページの表示用データも更新する
 $effect(() => {
 	// ディープコピーして、ストア自体を変更しないようにする
 	displayCategories = JSON.parse(JSON.stringify(categories));
@@ -32,7 +36,7 @@ $effect(() => {
 // --- Functions ---
 
 function handleDnd(event: CustomEvent<{ items: Category[]; final?: boolean }>) {
-	// dndzoneが並び替えた結果をローカルの表示用データに反� 
+	// dndzoneが並び替えた結果をローカルの表示用データに反映
 	displayCategories = event.detail.items;
 }
 
@@ -50,7 +54,7 @@ async function saveHomepageSettings() {
 		// alert(`保存処理を実装する必要があります: ${JSON.stringify(displayCategories)}`);
 		// API呼び出しが成功したら、グローバルなストアも更新
 		setCategories(displayCategories);
-		alert("ホー� ページの設定を保存しました（ダミー）");
+		alert("ホームページの設定を保存しました（ダミー）");
 	} catch (e) {
 		alert("保存に失敗しました。");
 	}
@@ -65,7 +69,7 @@ async function addCategoryHandler() {
 	const id = categoryState.newId.trim();
 	const label = categoryState.newLabel.trim();
 	if (!id || !label) {
-		categoryState.error = "IDとラベルの両方を入力してく� さい。";
+		categoryState.error = "IDとラベルの両方を入力してください。";
 		return;
 	}
 
@@ -79,9 +83,9 @@ async function addCategoryHandler() {
 		});
 		const resData = await res.json();
 		if (!res.ok)
-			throw new Error(resData.error || "カテゴリの追� に失敗しました。");
+			throw new Error(resData.error || "カテゴリの追加に失敗しました。");
 
-		// APIから返された新しいカテゴリをストアに追� （UIが自動で更新される）
+		// APIから返された新しいカテゴリをストアに追加（UIが自動で更新される）
 		addCategory(resData.category);
 		categoryState.newId = "";
 		categoryState.newLabel = "";
@@ -138,13 +142,13 @@ function cancelDelete() {
 </script>
 
 <div class="max-w-xl mx-auto p-4">
-	<h2 class="text-2xl font-bold mb-6 text-center text-slate-800 dark:text-white">ホー� ページ・カテゴリ管理</h2>
+	<h2 class="text-2xl font-bold mb-6 text-center text-slate-800 dark:text-white">ホームページ・カテゴリ管理</h2>
 
-	<!-- ホー� ページ表示設定 -->
+	<!-- ホームページ表示設定 -->
 	<div class="mb-8 p-4 bg-slate-100 dark:bg-slate-800 rounded-xl shadow">
 		<h3 class="text-lg font-semibold mb-3 text-slate-800 dark:text-white">表示設定</h3>
 		<p class="text-sm text-slate-600 dark:text-slate-400 mb-4">
-			ホー� ページに表示するカテゴリの� �番と表示/非表示を編集します。ドラッグ＆ドロップで並び替え、クリックで表示を切り替えられます。
+			ホームページに表示するカテゴリの順番と表示/非表示を編集します。ドラッグ＆ドロップで並び替え、クリックで表示を切り替えられます。
 		</p>
 		<div class="flex justify-center items-center gap-4 mb-6">
 			<span class="text-slate-700 dark:text-slate-200 font-semibold">グリッド列数</span>
@@ -155,7 +159,7 @@ function cancelDelete() {
 						class={`w-9 h-9 flex items-center justify-center rounded-full border transition
 							${gridCols === n ? 'bg-emerald-500 text-white border-emerald-600 shadow' : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 border-slate-300 dark:border-slate-600'}
 						`}
-						aria-label={n + "カラ� "}
+						aria-label={n + "カラム"}
 						onclick={() => gridCols = n}
 					>{n}</button>
 				{/each}
@@ -165,7 +169,7 @@ function cancelDelete() {
 		<!-- D&Dリスト -->
 		<ul
 			use:dndzone={{ items: displayCategories, flipDurationMs: 200 }}
-			onconsider={handleDnd}
+			on:consider={handleDnd}
 			class={`grid gap-3 mb-6`}
 			style={`grid-template-columns: repeat(${gridCols}, minmax(0, 1fr));`}
 		>
@@ -200,7 +204,7 @@ function cancelDelete() {
 
 	<!-- カテゴリ管理 -->
 	<div class="mb-6 p-4 bg-slate-100 dark:bg-slate-800 rounded-xl shadow">
-		<h3 class="text-lg font-semibold mb-3 text-slate-800 dark:text-white">カテゴリの追� と削除</h3>
+		<h3 class="text-lg font-semibold mb-3 text-slate-800 dark:text-white">カテゴリの追加と削除</h3>
 		{#if categoryState.error}
 			<div class="mb-2 p-2 text-sm rounded bg-red-500/20 text-red-500">{categoryState.error}</div>
 		{/if}
@@ -209,7 +213,7 @@ function cancelDelete() {
 			<input type="text" placeholder="カテゴリ名 (例: まとめNEWS)" bind:value={categoryState.newLabel} class="md:col-span-2 rounded-lg px-3 py-2 border bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600" onkeydown={(e) => e.key === 'Enter' && addCategoryHandler()} disabled={categoryState.isProcessing} />
 		</div>
 		<button class="w-full bg-emerald-500 text-white rounded-lg px-3 py-2 flex items-center justify-center gap-1.5 font-semibold hover:bg-emerald-600 transition disabled:opacity-50" onclick={addCategoryHandler} disabled={categoryState.isProcessing}>
-			<Plus class="w-4 h-4" />新しいカテゴリを追� 
+			<Plus class="w-4 h-4" />新しいカテゴリを追加
 		</button>
 		<div class="flex flex-wrap gap-2 mt-4">
 			{#each categories as cat, idx}

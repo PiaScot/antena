@@ -12,12 +12,11 @@ export const GET: RequestHandler = async ({ url }) => {
   try {
     if (id) {
       const bookmarked = await getBookmark(id);
-      // ★★★ 解決策: { isBookmarked: ... } というオブジェクトを返す ★★★
       return json({ isBookmarked: bookmarked });
     }
 
     const articles = await getBookmarks();
-    return json({ articles }); // jsonヘルパーでラップ
+    return json({ articles });
   } catch (err: any) {
     console.error(err);
     return json({ error: err.message }, { status: 500 });

@@ -2,7 +2,6 @@ import { getBookmarks } from "$lib/api/db/bookmark";
 import type { PageServerLoad } from "./$types";
 import type { ArticleWithSiteName, LoadPageData } from "$lib/types";
 
-// `LoadPageData`型に準� したデータを返します
 type BookmarkPageData = LoadPageData<ArticleWithSiteName>;
 
 export const load: PageServerLoad<BookmarkPageData> = async () => {

@@ -22,7 +22,7 @@ let cardStyle = $state<"image" | "simple">("image");
       transition border-2 border-transparent hover:border-emerald-400
       focus-visible:ring-2 focus-visible:ring-emerald-500
       bg-slate-800 dark:bg-slate-700 text-emerald-400"
-      aria-label="サ� ネイル表示"
+      aria-label="ã�µã� ã��ã�¤ã�«è¡¨ç¤º"
       aria-pressed={cardStyle === "image"}
       style={cardStyle === "image" ? "background: #10b98122; border-color: #10b981;" : ""}
     >
@@ -34,7 +34,7 @@ let cardStyle = $state<"image" | "simple">("image");
       transition border-2 border-transparent hover:border-emerald-400
       focus-visible:ring-2 focus-visible:ring-emerald-500
       bg-slate-800 dark:bg-slate-700 text-emerald-400"
-      aria-label="リスト表示"
+      aria-label="ã�ªã�¹ã��è¡¨ç¤º"
       aria-pressed={cardStyle === "simple"}
       style={cardStyle === "simple" ? "background: #10b98122; border-color: #10b981;" : ""}
     >
@@ -44,7 +44,7 @@ let cardStyle = $state<"image" | "simple">("image");
 </div>
 <div class="max-w-2xl mx-auto py-3 px-1">
   {#if articles.length === 0}
-    <p class="text-center text-slate-600 dark:text-slate-300">記事が見つかりません。</p>
+    <p class="text-center text-slate-600 dark:text-slate-300">表示する記事がありません</p>
   {:else}
     <div class="mx-auto w-full max-w-screen-lg px-1 sm:px-2">
       <div class="space-y-3">

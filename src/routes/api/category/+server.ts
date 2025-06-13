@@ -8,7 +8,7 @@ export const POST: RequestHandler = async ({ request }) => {
   try {
     const { id, label } = await request.json();
     if (!id || typeof id !== "string" || !label || typeof label !== "string") {
-      return json({ error: "IDとラベルは必� �です" }, { status: 400 });
+      return json({ error: "IDとラベルは必須です" }, { status: 400 });
     }
 
     const newCategory = await createCategoryInDB(id, label);
@@ -30,7 +30,7 @@ export const DELETE: RequestHandler = async ({ url }) => {
   try {
     const id = url.searchParams.get("id");
     if (!id) {
-      return json({ error: "カテゴリIDは必� �です" }, { status: 400 });
+      return json({ error: "カテゴリIDは必須です" }, { status: 400 });
     }
 
     await deleteCategoryInDB(id);

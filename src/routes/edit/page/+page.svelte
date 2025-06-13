@@ -13,6 +13,7 @@ import type { ArticleWithSiteName, Site, Category } from "$lib/types";
 import { getDomain } from "$lib/utils";
 import dayjs from "dayjs";
 
+// --- State ---
 const sites = $derived($sitesStore);
 const categories = $derived($categoriesStore);
 
@@ -36,6 +37,7 @@ let addSiteState = $state({
 	fetchedArticles: null as ArticleWithSiteName[] | null,
 });
 
+// 簡易カテゴリ追加モーダル用の状態
 let categoryModalState = $state({
 	show: false,
 	newId: "",
@@ -44,6 +46,7 @@ let categoryModalState = $state({
 	isProcessing: false,
 });
 
+// --- Derived State ---
 const filteredSites = $derived(() => {
 	if (!searchTerm) return sites;
 	const lower = searchTerm.toLowerCase();
@@ -63,12 +66,12 @@ async function fetchSite() {
 	addSiteState.loadSite = null;
 	addSiteState.addSuccessMsg = "";
 	if (!addSiteState.inputUrl || !addSiteState.inputCategory) {
-		addSiteState.fetchError = "Enter URL and category";
+		addSiteState.fetchError = "URLとカテゴリを入力してください";
 		return;
 	}
 	const domain = getDomain(addSiteState.inputUrl);
 	if (sites.find((s) => getDomain(s.url) === domain)) {
-		addSiteState.fetchError = "It's already registered site";
+		addSiteState.fetchError = `このサイトはすでに登録済みです`;
 		return;
 	}
 	addSiteState.isFetching = true;
@@ -82,8 +85,7 @@ async function fetchSite() {
 			}),
 		});
 		const resData = await res.json();
-		if (!res.ok || resData.error)
-			throw new Error(resData.error || "Failed to fetch");
+		if (!res.ok || resData.error) throw new Error(resData.error || "取得失敗");
 		addSiteState.loadSite = resData.site;
 		addSiteState.fetchedArticles = resData.articles;
 	} catch (e) {
@@ -111,13 +113,13 @@ async function registerSite() {
 		});
 		const resData = await res.json();
 		if (!res.ok || !resData.site)
-			throw new Error(resData?.error || "Unrecognized Error");
+			throw new Error(resData?.error || "不明なエラー");
 
 		addSite(resData.site);
-		addSiteState.addSuccessMsg = "Added Site";
+		addSiteState.addSuccessMsg = "サイトを追加しました";
 		clearFetched();
 	} catch (e) {
-		addSiteState.addSuccessMsg = `Failed to add new site: ${e instanceof Error ? e.message : String(e)}`;
+		addSiteState.addSuccessMsg = `サイトの追加に失敗しました: ${e instanceof Error ? e.message : String(e)}`;
 	}
 }
 
@@ -157,7 +159,7 @@ async function commitEdit() {
 			body: JSON.stringify(payload),
 		});
 		const resData = await res.json();
-		if (!res.ok) throw new Error(resData?.error || "Failed to fetch");
+		if (!res.ok) throw new Error(resData?.error || "更新失敗");
 
 		updateSite(resData.site);
 		cancelEdit();
@@ -178,7 +180,7 @@ async function addCategoryFromModal() {
 	const id = categoryModalState.newId.trim();
 	const label = categoryModalState.newLabel.trim();
 	if (!id || !label) {
-		categoryModalState.error = "Enter ID(only alphabetic chars) and Label";
+		categoryModalState.error = "IDとラベルの両方を入力してください。";
 		return;
 	}
 
@@ -192,14 +194,14 @@ async function addCategoryFromModal() {
 		});
 		const resData = await res.json();
 		if (!res.ok)
-			throw new Error(
-				resData.error || `Failed to add category id => ${id}, label = ${label}`,
-			);
+			throw new Error(resData.error || "カテゴリの追加に失敗しました。");
 
 		addCategory(resData.category);
 		if (editState.id !== null) {
+			// サイト編集中なら、編集中のカテゴリを今追加したものに設定
 			editState.category = resData.category.id;
 		} else {
+			// 新規サイト追加中なら、そちらのカテゴリを設定
 			addSiteState.inputCategory = resData.category.id;
 		}
 		categoryModalState.show = false;
@@ -212,9 +214,11 @@ async function addCategoryFromModal() {
 </script>
 
 <div class="max-w-xl mx-auto p-4">
-	<h2 class="text-2xl font-bold mb-6 text-center text-slate-800 dark:text-white">サイトの追� と編集</h2>
+	<h2 class="text-2xl font-bold mb-6 text-center text-slate-800 dark:text-white">サイトの追加と編集</h2>
+	
+	<!-- 新規サイト追加フォーム -->
 	<div class="mb-8 p-4 bg-slate-100 dark:bg-slate-800 rounded-xl shadow">
-		<h3 class="text-lg font-semibold mb-3 text-slate-800 dark:text-white">新規サイト追� </h3>
+		<h3 class="text-lg font-semibold mb-3 text-slate-800 dark:text-white">新規サイト追加</h3>
 		{#if addSiteState.addSuccessMsg}
 			<div class="mb-2 p-3 rounded-lg bg-emerald-500/20 text-emerald-500 text-center">{addSiteState.addSuccessMsg}</div>
 		{/if}
@@ -228,7 +232,7 @@ async function addCategoryFromModal() {
 							<option value={cat.id}>{cat.label}</option>
 						{/each}
 					</select>
-					<button onclick={openCategoryModal} type="button" class="p-2 rounded-lg bg-emerald-500 text-white hover:bg-emerald-600 transition" title="新規カテゴリ追� ">
+					<button onclick={openCategoryModal} type="button" class="p-2 rounded-lg bg-emerald-500 text-white hover:bg-emerald-600 transition" title="新規カテゴリ追加">
 						<Plus class="w-5 h-5" />
 					</button>
 				</div>
@@ -240,7 +244,7 @@ async function addCategoryFromModal() {
 					{#if addSiteState.isFetching}
 						<span>検索中...</span>
 					{:else}
-						<span>RSS情� �を検索</span>
+						<span>RSS情報を検索</span>
 					{/if}
 				</button>
 			</div>
@@ -275,11 +279,11 @@ async function addCategoryFromModal() {
 		{/if}
 	</div>
 
-	<!-- 新規カテゴリ追� モーダル -->
+	<!-- 新規カテゴリ追加モーダル -->
 	{#if categoryModalState.show}
 		<div class="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4" onclick={() => categoryModalState.show = false}>
 			<div class="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-6 max-w-sm w-full" onclick={(e) => e.stopPropagation()}>
-				<h3 class="text-lg font-bold mb-4 text-slate-800 dark:text-white">新規カテゴリ追� </h3>
+				<h3 class="text-lg font-bold mb-4 text-slate-800 dark:text-white">新規カテゴリ追加</h3>
 				{#if categoryModalState.error}
 					<div class="mb-2 p-2 text-sm rounded bg-red-500/20 text-red-500">{categoryModalState.error}</div>
 				{/if}
@@ -288,7 +292,7 @@ async function addCategoryFromModal() {
 					<input type="text" placeholder="カテゴリ名 (例: まとめNEWS)" bind:value={categoryModalState.newLabel} class="rounded-lg px-3 py-2 border bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600" disabled={categoryModalState.isProcessing} />
 				</div>
 				<div class="flex gap-2 mt-4">
-					<button onclick={addCategoryFromModal} disabled={categoryModalState.isProcessing} class="flex-1 px-4 py-2 rounded-lg bg-emerald-600 text-white font-semibold hover:bg-emerald-700 disabled:opacity-50">追� </button>
+					<button onclick={addCategoryFromModal} disabled={categoryModalState.isProcessing} class="flex-1 px-4 py-2 rounded-lg bg-emerald-600 text-white font-semibold hover:bg-emerald-700 disabled:opacity-50">追加</button>
 					<button onclick={() => categoryModalState.show = false} class="flex-1 px-4 py-2 rounded-lg bg-gray-300 text-gray-700 font-semibold hover:bg-gray-400 dark:bg-gray-600 dark:text-white">キャンセル</button>
 				</div>
 			</div>
@@ -312,7 +316,7 @@ async function addCategoryFromModal() {
 				{#each filteredSites() as site (site.id)}
 					<div class="rounded-xl bg-slate-100 dark:bg-slate-800 shadow p-4 relative">
 						{#if editState.id === site.id}
-							<!-- 編集フォー�  -->
+							<!-- 編集フォーム -->
 							<div class="flex flex-col gap-2">
 								<input type="text" bind:value={editState.title} class="block w-full rounded-lg border-emerald-400 bg-white dark:bg-slate-700 text-slate-900 dark:text-white px-3 py-2 border" placeholder="サイト名" />
 								<div class="flex items-center gap-2">
@@ -322,7 +326,7 @@ async function addCategoryFromModal() {
 											<option value={cat.id}>{cat.label}</option>
 										{/each}
 									</select>
-									<button onclick={openCategoryModal} type="button" class="p-2 rounded-lg bg-emerald-500 text-white hover:bg-emerald-600 transition" title="新規カテゴリ追� ">
+									<button onclick={openCategoryModal} type="button" class="p-2 rounded-lg bg-emerald-500 text-white hover:bg-emerald-600 transition" title="新規カテゴリ追加">
 										<Plus class="w-5 h-5" />
 									</button>
 								</div>
