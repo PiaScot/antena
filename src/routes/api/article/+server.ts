@@ -1,11 +1,11 @@
-// src/routes/api/feed/+server.ts
 import type { RequestHandler } from "@sveltejs/kit";
 import {
-  fetchAllArticles,
-  fetchArticlesByCategory,
-  fetchArticlesBySite,
-  fetchArticlesForArtCategory,
+  loadAllArticles,
+  loadArticlesByCategory,
+  loadArticlesBySite,
+  loadArticlesForArtCategory,
 } from "$lib/api/db/article";
+import type { ArticleWithSiteName } from "$lib/types";
 const batchLength = 300;
 
 export const GET: RequestHandler = async ({ url }) => {
@@ -13,18 +13,17 @@ export const GET: RequestHandler = async ({ url }) => {
   const siteId = url.searchParams.get("site");
 
   try {
-    let result;
+    let result: ArticleWithSiteName[] | null;
     if (siteId) {
-      result = await fetchArticlesBySite(siteId);
+      result = await loadArticlesBySite(siteId);
     } else if (category === "art") {
-      result = await fetchArticlesForArtCategory();
+      result = await loadArticlesForArtCategory();
     } else if (category === "all") {
-      result = await fetchAllArticles();
+      result = await loadAllArticles();
     } else {
-      result = await fetchArticlesByCategory(category);
+      result = await loadArticlesByCategory(category);
     }
-    // result = { articles, count }
-    return new Response(JSON.stringify(result), {
+    return new Response(JSON.stringify({ articles: result }), {
       status: 200,
       headers: {
         "Content-Type": "application/json",

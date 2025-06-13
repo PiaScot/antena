@@ -1,14 +1,27 @@
-<!-- src/routes/articles/[id]/+page.svelte -->
 <script lang="ts">
-import type { ArticleWithSiteName } from "$lib/types";
+import type { PageServerData } from "./$types";
 
-export let data: { article: ArticleWithSiteName };
-const article = data.article;
+const { data } = $props<PageServerData>();
+const { article } = data;
 </script>
 
-<article class="article bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-900 p-4 rounded">
-  {@html article.content}
-</article>
+<div class="max-w-2xl mx-auto py-8 px-4">
+	{#if article}
+		<h1 class="text-2xl md:text-3xl font-bold mb-4 text-gray-900 dark:text-gray-100">
+			{article.title}
+		</h1>
+
+		<div class="mb-6 text-sm text-gray-500 dark:text-gray-400">
+			<span>投稿日: {new Date(article.pub_date).toLocaleDateString()}</span>
+		</div>
+
+		<div class="prose dark:prose-invert max-w-none">
+			{@html article.content}
+		</div>
+	{:else}
+		<p class="text-center text-red-500">記事データの読み込みに失敗しました。</p>
+	{/if}
+</div>
 
 <style>
   *, *::before, *::after { 

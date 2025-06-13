@@ -8,61 +8,46 @@ dayjs.extend(utc);
 dayjs.extend(timezone);
 dayjs.tz.setDefault("Asia/Tokyo");
 
-export let article: ArticleWithSiteName;
-export let withImage = true;
+const { article, withImage = true } = $props<{
+	article: ArticleWithSiteName;
+	withImage?: boolean;
+}>();
 
-const formattedDate = dayjs(article.pub_date).tz().format("YYYY/MM/DD HH:mm");
+const formattedDate = $derived(
+	dayjs(article.pub_date).tz().format("YYYY/MM/DD HH:mm"),
+);
 </script>
 
-{#if withImage}
-<!-- サムネイル付きバージョン -->
-<a href={`/articles/${article.id}`} rel="noopener noreferrer"
-  class="w-full text-left flex items-center gap-3 bg-slate-200 dark:bg-slate-700 rounded-lg p-3 shadow hover:bg-emerald-100 dark:hover:bg-emerald-800 transition"
+<a 
+  href={`/articles/${article.id}`} 
+  rel="noopener noreferrer"
+  class="group block w-full text-left bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-1 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
 >
-  <img src={article.thumbnail || '/favicon.png'} alt="thumb" class="w-14 h-14 rounded-lg object-cover flex-shrink-0" />
-  <div class="flex min-w-0 flex-1 flex-col p-1.5 text-sm">
-    <div class="flex items-center gap-x-2 gap-y-1 text-xs mb-1 w-full min-w-0">
-      <span class="text-slate-500 dark:text-slate-400 whitespace-nowrap flex-shrink-0">{formattedDate}</span>
-      {#if article.site_title}
-        <span
-          class="truncate max-w-[8rem] sm:max-w-[12rem] whitespace-nowrap rounded-full bg-slate-200 dark:bg-slate-600 px-2 py-0.5 text-xs font-medium text-slate-700 dark:text-slate-300"
-          title={article.site_title}
-        >
-          {article.site_title}
-        </span>
-      {/if}
-    </div>
-    <h3
-      class="text-sm font-semibold text-slate-800 dark:text-slate-100 line-clamp-2"
-      title={article.title}
-    >
-      {article.title || "タイトルなし"}
-    </h3>
-  </div>
+	<div class="flex items-start gap-4">
+		{#if withImage}
+			<img 
+        src={article.thumbnail || '/favicon.png'} 
+        alt="記事サ� ネイル" 
+        class="w-20 h-20 rounded-lg object-cover flex-shrink-0 border border-slate-200 dark:border-slate-600" 
+        loading="lazy"
+      />
+      <div class="w-20 h-20 rounded-lg bg-slate-100 dark:bg-slate-700 flex-shrink-0 items-center justify-center text-slate-400 hidden">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="1" x2="23" y1="1" y2="23" /><path d="M21 21H3a2 2 0 0 1-2-2V8.828a2 2 0 0 1 .586-1.414l2.828-2.828a2 2 0 0 1 1.414-.586H19a2 2 0 0 1 2 2v4" /><path d="M14 14a3 3 0 1 1-3-3" /><path d="M7 21a3 3 0 0 0 3-3" /></svg>
+      </div>
+		{/if}
+
+		<div class="flex-1 min-w-0">
+			<div class="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 mb-2">
+				<span>{formattedDate}</span>
+				{#if article.site_title}
+					<span class="font-medium text-emerald-700 dark:text-emerald-400 truncate group-hover:underline" title={article.site_title}>
+						{article.site_title}
+					</span>
+				{/if}
+			</div>
+			<h3 class="text-base font-bold text-slate-800 dark:text-slate-100 line-clamp-2 min-h-[3rem]" title={article.title}>
+				{article.title || "タイトルなし"}
+			</h3>
+		</div>
+	</div>
 </a>
-{:else}
-<!-- サムネイル無しバージョン（よりシンプル） -->
-<div
-  class="block w-full rounded-lg border border-gray-300 dark:border-slate-600 shadow hover:shadow-lg transition bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 focus-visible:ring-2 focus-visible:ring-emerald-500 focus:outline-none"
->
-  <a href={`/articles/${article.id}`} rel="noopener noreferrer" class="flex flex-col px-3 py-2 gap-1">
-    <div class="flex items-center gap-2 text-xs mb-1">
-      <span class="text-slate-500 dark:text-slate-400">{formattedDate}</span>
-      {#if article.site_title}
-        <span
-          class="rounded-full bg-slate-200 dark:bg-slate-600 px-2 py-0.5 text-xs font-medium text-slate-700 dark:text-slate-300 truncate max-w-[120px]"
-          title={article.site_title}
-        >
-          {article.site_title}
-        </span>
-      {/if}
-    </div>
-    <h3
-      class="text-base font-semibold text-slate-800 dark:text-slate-100 line-clamp-2"
-      title={article.title}
-    >
-      {article.title || "タイトルなし"}
-    </h3>
-  </a>
-</div>
-{/if}

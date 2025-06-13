@@ -1,72 +1,97 @@
 import { supabase } from "$lib/server/supabase";
 import { BOOKMARK_TABLE, SITE_TABLE } from "$env/static/private";
-import type { Article, ArticleWithSiteName } from "$lib/types";
+import type { Article, ArticleWithSiteName, Site } from "$lib/types";
+import { DB_BATCH_SIZE } from "$lib/server/config";
+import { flattenArticle } from "$lib/utils/article";
 
-export async function getBookmark(id: string) {
-  const { data: rows, error } = await supabase
+/**
+ * 指定されたIDのブックマークが存在するか確認します。
+ */
+export async function getBookmark(id: string | number): Promise<boolean> {
+  const { error, count } = await supabase
     .from(BOOKMARK_TABLE)
-    .select("*")
-    .eq("id", id)
-    .limit(1);
-
-  if (error) throw error;
-  return { bookmarked: rows && rows.length > 0 };
-}
-
-export async function getBookmarks() {
-  const q = `*, site:${SITE_TABLE}(title)`;
-  const { data: rows, error, count } = await supabase
-    .from(BOOKMARK_TABLE)
-    .select(q, { count: "exact" })
-    .order("pub_date", { ascending: false })
-    .limit(200);
+    .select("id", { count: "exact", head: true })
+    .eq("id", Number(id));
 
   if (error) {
-    console.error("Error fetching bookmarks with site title:", error.message);
+    console.error("Failed to get bookmark status:", error);
     throw error;
   }
-
-  if (!rows) {
-    return { articles: [], count: 0 };
-  }
-
-  const articles: ArticleWithSiteName[] = (rows as any[]).map((r) => {
-    const siteTitle = r.site?.title ?? "";
-
-    return {
-      id: r.id,
-      site_id: r.site_id ?? 0,
-      site_title: siteTitle,
-      title: r.title ?? "",
-      url: r.url ?? "",
-      category: r.category ?? "",
-      content: r.content ?? "",
-      pub_date: r.pub_date ?? "",
-      thumbnail: r.thumbnail ?? "",
-    };
-  });
-
-  return { articles, count: count ?? 0 };
+  return (count ?? 0) > 0;
 }
 
-export async function upsertBookmark(article: Article) {
-  const { id, url, title } = article;
+/**
+ * すべてのブックマーク記事を件数付きで取得します。
+ */
+export async function getBookmarks(): Promise<
+  { bookmarks: ArticleWithSiteName[]; count: number }
+> {
+  const q = `*, site:${SITE_TABLE}(title)`;
+  const { data, error, count } = await supabase
+    .from(BOOKMARK_TABLE)
+    .select(q, { count: "exact" }) // `count: "exact"`を追� して総件数を取得
+    .order("pub_date", { ascending: false })
+    .limit(DB_BATCH_SIZE);
+
+  if (error) {
+    console.error("Failed to get bookmarks:", error);
+    throw error;
+  }
+  if (!data) return { bookmarks: [], count: 0 };
+
+  const articles = data.map(flattenArticle);
+  return { bookmarks: articles, count: count ?? 0 };
+}
+
+/**
+ * ブックマークを登録または更新します。
+ */
+export async function upsertBookmark(
+  article: Partial<ArticleWithSiteName>,
+): Promise<{ ok: true }> {
+  const { id, site_id, title, url, category, content, pub_date, thumbnail } =
+    article;
+
   if (!id || !url || !title) {
-    throw new Error("必須情報が不足しています (id, url, title)");
+    throw new Error("必要な情� �(id, url, title)が不足しています。");
   }
 
-  const { error } = await supabase.from(BOOKMARK_TABLE).upsert([article]);
-  if (error) throw error;
+  const articleToUpsert: Article = {
+    id,
+    site_id: site_id ?? -1,
+    title,
+    url,
+    category: category ?? "",
+    content: content ?? "",
+    pub_date: pub_date ?? new Date().toISOString(),
+    thumbnail: thumbnail ?? "",
+  };
+
+  const { error } = await supabase.from(BOOKMARK_TABLE).upsert(articleToUpsert);
+
+  if (error) {
+    console.error("Failed to upsert bookmark:", error);
+    throw error;
+  }
   return { ok: true };
 }
 
-// ブックマーク削除
-export async function deleteBookmark(id: string) {
-  if (!id) throw new Error("id is required");
+/**
+ * ブックマークを削除します。
+ */
+export async function deleteBookmark(
+  id: string | number,
+): Promise<{ ok: true }> {
+  if (!id) throw new Error("IDは必� �です");
+
   const { error } = await supabase
     .from(BOOKMARK_TABLE)
     .delete()
-    .eq("id", id);
-  if (error) throw error;
+    .eq("id", Number(id));
+
+  if (error) {
+    console.error("Failed to delete bookmark:", error);
+    throw error;
+  }
   return { ok: true };
 }

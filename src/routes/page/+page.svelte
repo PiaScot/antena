@@ -1,152 +1,94 @@
 <script lang="ts">
-import { onMount, onDestroy, tick } from "svelte";
-import { beforeNavigate } from "$app/navigation";
-import { page } from "$app/stores";
-import { get } from "svelte/store";
+import { browser } from "$app/environment";
 import SiteCard from "$lib/components/SiteCard.svelte";
-import type { Site } from "$lib/types";
-import { scrollPositions } from "$lib/stores/scrollStore";
+import { sites } from "$lib/stores/siteStore";
+import { categories, updateCategory } from "$lib/stores/categoryStore";
+import type { Site, Category } from "$lib/types";
 
-let sites: Site[] = [];
-let loading = true;
-let error: string | null = null;
+const groupedSites = $derived(() => {
+	const groups: Record<string, Site[]> = {};
+	if (!$sites) return groups;
 
-let groupedSites: Record<string, Site[]> = {};
-let allCategories: string[] = [];
-let visibleCategories: Record<string, boolean> = {};
-
-let currentFullUrl: string;
-let pageStoreUnsubscribe: () => void;
-let beforeNavigateUnsubscribe: () => void;
+	for (const site of $sites) {
+		const catId = site.category || "other";
+		if (!groups[catId]) groups[catId] = [];
+		groups[catId].push(site);
+	}
+	return groups;
+});
 
 const CATEGORY_STATE_KEY = "category_visible_state";
 
-function saveCategoryState() {
-	if (typeof window === "undefined") return;
-	sessionStorage.setItem(CATEGORY_STATE_KEY, JSON.stringify(visibleCategories));
-}
+$effect(() => {
+	if (!browser) return;
 
-function restoreCategoryState() {
-	if (typeof window === "undefined") return;
 	const saved = sessionStorage.getItem(CATEGORY_STATE_KEY);
 	if (saved) {
 		try {
 			const obj = JSON.parse(saved);
-			for (const cat of allCategories) {
-				if (obj[cat] !== undefined) visibleCategories[cat] = obj[cat];
-			}
-		} catch {}
-	}
-}
-
-async function fetchSites() {
-	loading = true;
-	error = null;
-	try {
-		const res = await fetch("/api/page");
-		if (!res.ok) throw new Error(`HTTP ${res.status}`);
-		const json = await res.json();
-		sites = json.sites;
-
-		groupSites();
-		initializeVisibleCategories();
-		restoreCategoryState();
-	} catch (e: any) {
-		error = e.message;
-	} finally {
-		loading = false;
-		await tick();
-		const posMap = get(scrollPositions);
-		const y = posMap[currentFullUrl];
-		if (typeof y === "number") window.scrollTo(0, y);
-	}
-}
-
-function groupSites() {
-	groupedSites = {};
-	allCategories = [];
-	for (const site of sites) {
-		const cat = site.category || "その他";
-		if (!groupedSites[cat]) groupedSites[cat] = [];
-		groupedSites[cat].push(site);
-	}
-	allCategories = Object.keys(groupedSites);
-}
-
-function initializeVisibleCategories() {
-	visibleCategories = {};
-	for (const cat of allCategories) {
-		visibleCategories[cat] = true;
-	}
-}
-
-pageStoreUnsubscribe = page.subscribe((p) => {
-	currentFullUrl = p.url.href;
-});
-
-onMount(() => {
-	fetchSites();
-});
-
-function toggleCategory(cat) {
-	visibleCategories[cat] = !visibleCategories[cat];
-	saveCategoryState();
-}
-
-beforeNavigateUnsubscribe = beforeNavigate(({ from, to, type }) => {
-	if (from && from.url.href === currentFullUrl) {
-		if ((to && to.url.href !== currentFullUrl) || (!to && type === "leave")) {
-			const scrollY = window.scrollY;
-			scrollPositions.update((positions) => {
-				positions[currentFullUrl] = scrollY;
-				return positions;
-			});
-			saveCategoryState();
+			categories.update((cats) =>
+				cats.map((cat) =>
+					obj[cat.id] !== undefined ? { ...cat, visible: obj[cat.id] } : cat,
+				),
+			);
+		} catch {
+			// ignore error
 		}
 	}
 });
 
-onDestroy(() => {
-	if (pageStoreUnsubscribe) pageStoreUnsubscribe();
-	if (beforeNavigateUnsubscribe) beforeNavigateUnsubscribe();
+$effect(() => {
+	if (!browser) return;
+
+	if ($categories.length === 0) return;
+
+	const vis = Object.fromEntries(
+		$categories.map((cat) => [cat.id, cat.visible]),
+	);
+	sessionStorage.setItem(CATEGORY_STATE_KEY, JSON.stringify(vis));
 });
+
+function toggleCategory(categoryId: string) {
+	categories.update((cats) =>
+		cats.map((cat) =>
+			cat.id === categoryId ? { ...cat, visible: !cat.visible } : cat,
+		),
+	);
+}
 </script>
 
-{#if loading}
-  <p class="text-slate-800 dark:text-slate-200 text-center py-8">読み込み中...</p>
-{:else if error}
-  <p class="text-red-400 text-center py-8">エラー: {error}</p>
-{:else}
-  <div class="flex gap-2 overflow-x-auto px-2 py-3 bg-slate-50 dark:bg-slate-900 sticky top-16 z-10 border-b border-slate-200 dark:border-slate-700">
-    {#each allCategories as cat}
-      <button
-        on:click={() => toggleCategory(cat)}
-        class="px-3 py-1 rounded-full font-semibold text-sm transition-colors duration-150
-          {visibleCategories[cat]
-            ? 'bg-emerald-600 text-white dark:bg-emerald-400 dark:text-slate-900'
-            : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 opacity-70'}"
-      >
-        {cat}
-      </button>
-    {/each}
-  </div>
+<div
+	class="sticky top-16 z-10 border-b border-slate-200 bg-slate-50/90 px-2 py-3 backdrop-blur-sm dark:border-slate-700 dark:bg-slate-900/90"
+>
+	<div class="flex flex-wrap gap-2">
+		{#each $categories || [] as cat}
+			<button
+				onclick={() => toggleCategory(cat.id)}
+				class="flex-shrink-0 whitespace-nowrap rounded-full px-3 py-1 text-sm font-semibold transition-colors duration-150 {cat.visible
+					? 'bg-emerald-600 text-white dark:bg-emerald-400 dark:text-slate-900'
+					: 'bg-slate-200 text-slate-700 opacity-70 dark:bg-slate-700 dark:text-slate-200'}"
+			>
+				{cat.label}
+			</button>
+		{/each}
+	</div>
+</div>
 
-  <!-- サイトカード（カテゴリごと） -->
-  <div class="px-2 pb-32">
-    {#each allCategories as cat}
-      {#if visibleCategories[cat]}
-        <div class="mb-8">
-          <div class="mb-2 flex items-center gap-2">
-            <span class="text-lg font-bold text-emerald-700 dark:text-emerald-300">{cat}</span>
-            <span class="text-xs text-slate-500 dark:text-slate-400">({groupedSites[cat].length})</span>
-          </div>
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {#each groupedSites[cat] as site}
-              <SiteCard {site} />
-            {/each}
-          </div>
-        </div>
-      {/if}
-    {/each}
-  </div>
-{/if}
+<div class="px-2 pb-32">
+	{#each ($categories || []).filter((cat) => cat.visible) as cat}
+		{@const sitesForCategory = groupedSites()[cat.id]}
+		{#if sitesForCategory?.length > 0}
+			<div class="mb-8">
+				<div class="mb-2 flex items-center gap-2">
+					<span class="text-lg font-bold text-emerald-700 dark:text-emerald-300">{cat.label}</span>
+					<span class="text-xs text-slate-500 dark:text-slate-400">({sitesForCategory.length})</span>
+				</div>
+				<div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+					{#each sitesForCategory as site (site.id)}
+						<SiteCard {site} />
+					{/each}
+				</div>
+			</div>
+		{/if}
+	{/each}
+</div>

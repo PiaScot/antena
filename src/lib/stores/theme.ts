@@ -10,7 +10,7 @@ function init(): Theme {
 
 export const theme = writable<Theme>(init());
 
-// ストアが変わるたびに DOM / localStorage へ反映
+// ストアが変わるたびに DOM / localStorage へ反� 
 if (browser) {
   theme.subscribe((val) => {
     document.documentElement.classList.toggle("dark", val === "dark");

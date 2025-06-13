@@ -1,29 +1,26 @@
-// src/routes/bookmark/+page.server.ts
 import { getBookmarks } from "$lib/api/db/bookmark";
 import type { PageServerLoad } from "./$types";
-import type { ArticleWithSiteName } from "$lib/types";
+import type { ArticleWithSiteName, LoadPageData } from "$lib/types";
 
-interface BookmarkPageData {
-  articles: ArticleWithSiteName[];
-  count: number;
-  error?: string;
-}
+// `LoadPageData`型に準� したデータを返します
+type BookmarkPageData = LoadPageData<ArticleWithSiteName>;
 
 export const load: PageServerLoad<BookmarkPageData> = async () => {
   try {
-    // getBookmarks は site_title を含んだ articles を返すようになった
-    const { articles, count } = await getBookmarks();
-    return { articles, count: count ?? 0 };
+    const { bookmarks, count } = await getBookmarks();
+    return {
+      items: bookmarks,
+      count: count,
+    };
   } catch (error: any) {
     console.error(
       "Error loading bookmarks in /routes/bookmark/+page.server.ts:",
       error.message,
     );
-    // エラーが発生した場合でも、ページがクラッシュしないように空の配列とエラーメッセージを返す
     return {
-      articles: [],
+      items: [],
       count: 0,
-      error: error.message || "ブックマークの読み込みに失敗しました。",
+      error: error.message || "Failed to load bookmark data from db.",
     };
   }
 };
