@@ -169,7 +169,7 @@ function cancelDelete() {
 		<!-- D&Dリスト -->
 		<ul
 			use:dndzone={{ items: displayCategories, flipDurationMs: 200 }}
-			on:consider={handleDnd}
+			onconsider={handleDnd}
 			class={`grid gap-3 mb-6`}
 			style={`grid-template-columns: repeat(${gridCols}, minmax(0, 1fr));`}
 		>

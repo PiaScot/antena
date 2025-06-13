@@ -71,7 +71,7 @@ async function fetchSite() {
 	}
 	const domain = getDomain(addSiteState.inputUrl);
 	if (sites.find((s) => getDomain(s.url) === domain)) {
-		addSiteState.fetchError = `このサイトはすでに登録済みです`;
+		addSiteState.fetchError = "このサイトはすでに登録済みです";
 		return;
 	}
 	addSiteState.isFetching = true;

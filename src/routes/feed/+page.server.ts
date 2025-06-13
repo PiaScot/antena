@@ -32,7 +32,7 @@ export const load: PageServerLoad = async ({ url }) => {
       site,
     };
   } catch (error: any) {
-    console.error(`Failed to load articles:`, error?.message ?? error);
+    console.error(`Failed to load articles: ${error?.message ?? error}`);
     throw svelteKitError(
       500,
       `Failed to load articles: ${error?.message ?? error}`,
