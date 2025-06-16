@@ -1,4 +1,3 @@
-// src/routes/feed/+page.server.ts
 import type { PageServerLoad } from "./$types";
 import {
   loadAllArticles,
@@ -6,36 +5,32 @@ import {
   loadArticlesBySite,
   loadArticlesForArtCategory,
 } from "$lib/api/db/article";
-import type { ArticleWithSiteName } from "$lib/types";
-import { error as svelteKitError } from "@sveltejs/kit";
+// svelteKitErrorは不要になることが多いので一旦削除
 
-export const load: PageServerLoad = async ({ url }) => {
+export const load: PageServerLoad = ({ url }) => { // ← asyncを外す
   const category = url.searchParams.get("category") || "all";
   const site = url.searchParams.get("site");
 
-  try {
-    let articles: ArticleWithSiteName[] = [];
-
+  // 時間のかかるデータ取得処理を Promise として定義
+  const articlesPromise = (() => {
     if (site) {
-      articles = await loadArticlesBySite(site) ?? [];
-    } else if (category.toLowerCase() === "art") {
-      articles = await loadArticlesForArtCategory() ?? [];
-    } else if (category && category !== "all") {
-      articles = await loadArticlesByCategory(category) ?? [];
-    } else {
-      articles = await loadAllArticles() ?? [];
+      return loadArticlesBySite(site);
     }
+    if (category.toLowerCase() === "art") {
+      return loadArticlesForArtCategory();
+    }
+    if (category && category !== "all") {
+      return loadArticlesByCategory(category);
+    }
+    return loadAllArticles();
+  })();
 
-    return {
-      articles,
-      category,
-      site,
-    };
-  } catch (error: any) {
-    console.error(`Failed to load articles: ${error?.message ?? error}`);
-    throw svelteKitError(
-      500,
-      `Failed to load articles: ${error?.message ?? error}`,
-    );
-  }
+  return {
+    category,
+    site,
+    // articles の中身そのものではなく、articles を取得する「約束」を渡す
+    streamed: {
+      articles: articlesPromise.then((res) => res ?? []),
+    },
+  };
 };

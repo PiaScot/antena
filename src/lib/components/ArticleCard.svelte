@@ -19,7 +19,7 @@ const formattedDate = $derived(
 </script>
 
 <a 
-  href={`/articles/${article.id}`} 
+  href={`${article.url}`}
   rel="noopener noreferrer"
   class="group block w-full text-left bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-1 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
 >
@@ -27,7 +27,7 @@ const formattedDate = $derived(
 		{#if withImage}
 			<img 
         src={article.thumbnail || '/favicon.png'} 
-        alt="記事サ� ネイル" 
+        alt="サムネイル"
         class="w-20 h-20 rounded-lg object-cover flex-shrink-0 border border-slate-200 dark:border-slate-600" 
         loading="lazy"
       />
@@ -46,7 +46,7 @@ const formattedDate = $derived(
 				{/if}
 			</div>
 			<h3 class="text-base font-bold text-slate-800 dark:text-slate-100 line-clamp-2 min-h-[3rem]" title={article.title}>
-				{article.title || "タイトルなし"}
+				{article.title || "記事タイトル"}
 			</h3>
 		</div>
 	</div>

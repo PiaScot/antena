@@ -7,19 +7,16 @@ const { article } = $props<{ article: ArticleWithSiteName | null }>();
 let isBookmarked = $state(false);
 let bookmarkLoading = $state(false);
 
-// ★★★ 修正点: `$props`の値`article`を`article()`として呼び出す ★★★
 const isArticleDetail = $derived(
 	/^\/articles\/\d+/.test($page.url.pathname) && article() != null,
 );
 
 $effect(() => {
-	// ★★★ 修正点: `article`を`article()`として呼び出す ★★★
 	const currentArticle = article();
 	if (isArticleDetail && currentArticle?.id) {
 		const checkStatus = async () => {
 			bookmarkLoading = true;
 			try {
-				// ★★★ 修正点: IDも`currentArticle.id`から取得 ★★★
 				const res = await fetch(`/api/bookmark?id=${currentArticle.id}`);
 				if (res.ok) {
 					const json = await res.json();
@@ -41,7 +38,6 @@ $effect(() => {
 });
 
 async function toggleBookmark() {
-	// ★★★ 修正点: `article`を`article()`として呼び出す ★★★
 	const currentArticle = article();
 	if (!currentArticle?.id) return;
 
@@ -51,12 +47,10 @@ async function toggleBookmark() {
 	try {
 		let response: Response;
 		if (currentBookmarkState) {
-			// ★★★ 修正点: IDも`currentArticle.id`から取得 ★★★
 			response = await fetch(`/api/bookmark?id=${currentArticle.id}`, {
 				method: "DELETE",
 			});
 		} else {
-			// ★★★ 修正点: bodyに渡すのも`currentArticle`にする ★★★
 			response = await fetch("/api/bookmark", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },

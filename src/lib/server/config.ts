@@ -1,7 +1,2 @@
-/**
- * Supabaseへのクエリで一度に取得するレコード数の上限。
- * 複数のDBアクセス関数で共有される。
- */
-export const DB_BATCH_SIZE = 100;
-
-// 他のサーバーサイド共通の定数があればここに追� する
+// 一度にsupabase から呼び出すレコードのの最大数
+export const DB_BATCH_SIZE = 300;

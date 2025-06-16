@@ -10,7 +10,6 @@ function init(): Theme {
 
 export const theme = writable<Theme>(init());
 
-// ストアが変わるたびに DOM / localStorage へ反� 
 if (browser) {
   theme.subscribe((val) => {
     document.documentElement.classList.toggle("dark", val === "dark");
@@ -18,13 +17,8 @@ if (browser) {
   });
 }
 
-// フォントサイズの取りうる値を型として定義
 export type FontSizeValue = "small" | "medium" | "large";
-
-// フォントサイズのストア (初期値は 'medium')
-export const fontSize = writable<FontSizeValue>("medium");
-
-// フォントサイズの値と対応するTailwind CSSクラスのマッピング
+export const fontSize = writable<FontSizeValue>("small");
 export const fontSizeClassMap: Record<FontSizeValue, string> = {
   small: "text-xs", // 0.75rem (12px)
   medium: "text-sm", // 0.875rem (14px)

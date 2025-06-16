@@ -10,13 +10,11 @@ import {
 import { getDomain } from "$lib/utils";
 import type { Site } from "$lib/types";
 
-// --- GET --- サイト単体 or 一覧
 export const GET: RequestHandler = async ({ url }) => {
   try {
     const inputUrl = url.searchParams.get("url");
 
     if (inputUrl) {
-      // ドメイン指定検索
       const domain = getDomain(inputUrl);
       if (!domain) {
         return json({ error: `不正なURLです: ${inputUrl}` }, { status: 400 });
@@ -24,7 +22,6 @@ export const GET: RequestHandler = async ({ url }) => {
       const site = await loadSiteByDomain(domain);
       return json({ site });
     } else {
-      // サイト一覧全件
       const { sites, count } = await loadAllSites();
       return json({ sites, count });
     }
@@ -36,7 +33,6 @@ export const GET: RequestHandler = async ({ url }) => {
   }
 };
 
-// --- POST --- サイト新規登録 or RSS解析だけ
 export const POST: RequestHandler = async ({ request }) => {
   try {
     const body = await request.json();
@@ -49,7 +45,6 @@ export const POST: RequestHandler = async ({ request }) => {
       return await handleFetchSiteInfo(url, category);
     }
 
-    // 通常の新規登録
     return await handleRegisterSite(body);
   } catch (error: any) {
     console.error("Invalid POST request:", error);
@@ -59,7 +54,6 @@ export const POST: RequestHandler = async ({ request }) => {
   }
 };
 
-// --- PATCH --- サイト編集
 export const PATCH: RequestHandler = async ({ request }) => {
   try {
     const body = await request.json();
@@ -76,8 +70,6 @@ export const PATCH: RequestHandler = async ({ request }) => {
     return json({ error: err?.message || "更新失敗" }, { status: 500 });
   }
 };
-
-// --- 補助関数 ---
 
 async function handleFetchSiteInfo(url: string, category: string) {
   try {
