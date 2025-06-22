@@ -6,7 +6,7 @@ import type { Category } from "$lib/types";
  * 新しいカテゴリをデータベースに作成します。
  * @param id - ユーザーが入力したカテゴリID (英数字)
  * @param label - ユーザーが入力したカテゴリ名
- * @returns {Promise<Category>} 作成されたカテゴリ情� �
+ * @returns {Promise<Category>} 作成されたカテゴリ情報
  */
 export async function createCategoryInDB(
   id: string,
@@ -26,7 +26,7 @@ export async function createCategoryInDB(
     .single();
 
   if (error) {
-    // 主キー重複エラーの� �合
+    // 主キー重複エラーの場合
     if (error.code === "23505") {
       throw new Error(`カテゴリID '${id}' は既に存在します。`);
     }

@@ -1,6 +1,6 @@
 import { supabase } from "$lib/server/supabase";
 import { ARTICLE_TABLE, SITE_TABLE } from "$env/static/private";
-import type { ArticleWithSiteName, Site } from "$lib/types";
+import type { FullArticleData, Site } from "$lib/types";
 import { XMLParser } from "fast-xml-parser";
 import { getDomain, randomPCUA } from "$lib/utils";
 
@@ -45,7 +45,7 @@ export async function loadSiteByDomain(domain: string): Promise<Site | null> {
 
 /**
  * 新規サイトを登録します。
- * @param site - idを除いたサイト情� �
+ * @param site - idを除いたサイト情報
  * @returns {Promise<{ ok: boolean; site?: Site; error?: string }>}
  */
 export async function registerSite(
@@ -64,10 +64,10 @@ export async function registerSite(
 }
 
 /**
- * サイト情� �を更新します。
+ * サイト情報を更新します。
  * @param id - 更新対象のサイトID
- * @param updates - 更新するサイト情� � (部分的な更新も可能)
- * @returns {Promise<Site>} 更新後のサイト情� �
+ * @param updates - 更新するサイト情報 (部分的な更新も可能)
+ * @returns {Promise<Site>} 更新後のサイト情報
  */
 export async function updateSiteInDB(
   id: number,
@@ -88,14 +88,14 @@ export async function updateSiteInDB(
 }
 
 /**
- * RSSフィードからサイト情� �と最新記事を取得します。
+ * RSSフィードからサイト情報と最新記事を取得します。
  */
 export async function fetchSiteInfoFromRSS(
   url: string,
   category: string,
 ): Promise<{
   site: Site;
-  articles: ArticleWithSiteName[];
+  articles: FullArticleData[];
 }> {
   const domain = getDomain(url);
   const rss = await determineRSS(url);
@@ -115,7 +115,11 @@ export async function fetchSiteInfoFromRSS(
   const xml = parser.parse(text);
 
   const chan = xml.rss?.channel ?? xml["rdf:RDF"]?.channel ?? xml.feed;
-  if (!chan) throw new Error("有効なチャンネルまたはフィードが見つかりません");
+  if (!chan) {
+    throw new Error(
+      "有効なチャンネルまたはフィードが見つかりません",
+    );
+  }
 
   const siteTitle =
     (typeof chan.title === "object" ? chan.title["#text"] : chan.title) || "";
@@ -127,7 +131,7 @@ export async function fetchSiteInfoFromRSS(
         ? chan.entry
         : (chan.entry ? [chan.entry] : [])));
 
-  const articles: ArticleWithSiteName[] = items.map((item) => {
+  const articles: FullArticleData[] = items.map((item) => {
     const link = item.link?.href ?? item.link ?? "";
     const pubDate = item.pubDate ?? item.published ?? item["dc:date"] ??
       new Date().toISOString();
@@ -145,7 +149,7 @@ export async function fetchSiteInfoFromRSS(
   });
 
   const pubDates = articles.map((a) => Date.parse(a.pub_date)).filter((d) =>
-    !isNaN(d)
+    !Number.isNaN(d)
   );
   const duration_access = calcDurationAccess(pubDates);
 
@@ -158,7 +162,7 @@ export async function fetchSiteInfoFromRSS(
     domain,
     last_access: new Date().toISOString(),
     duration_access,
-    scrape_options: {},
+    scrape_options: { removeSelectorTags: [] },
   };
 
   return { site, articles };
@@ -194,7 +198,7 @@ export async function determineRSS(top: string): Promise<string> {
   return "";
 }
 
-/** 記事配列から平均更新間隔（秒）推定 */
+/** 記事配列から平均更新間隔（秒）を推定 */
 export function calcDurationAccess(pubDates: number[]): number {
   const defaultDuration = 3600; // 1時間
   if (pubDates.length < 2) return defaultDuration;

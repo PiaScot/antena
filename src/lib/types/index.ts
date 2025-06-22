@@ -8,7 +8,14 @@ export interface Site {
   domain: string;
   last_access: string;
   duration_access: number;
-  scrape_options: object;
+  scrape_options: ScrapeOption;
+}
+
+// personal specialized options
+// default each Site has only removeSelectorTags
+export interface ScrapeOption {
+  removeSelectorTags: string[];
+  display_mode?: "in_app" | "direct_link";
 }
 
 // same definition with supabase registered schema
@@ -30,17 +37,18 @@ export interface Category {
   visible: boolean;
 }
 
-// for display frontend data
-export interface ArticleWithSiteName {
-  id: number;
-  site_id: number;
-  title: string;
-  site_title: string;
-  url: string;
-  category: string;
-  thumbnail: string;
-  pub_date: string;
-  content: string;
+/**
+ * 個別記事ページで使うための、完全な記事データ型
+ */
+export interface FullArticleData extends Article {
+  site: Pick<Site, "title" | "scrape_options"> | null;
+}
+/**
+ * 記事フィード一覧のカードで使うための、最適化された記事データ型
+ * (以前の ArticleWithSiteName の後継)
+ */
+export interface ArticleFeedItem extends Omit<Article, "content" | "site_id"> {
+  site: Pick<Site, "title" | "scrape_options"> | null;
 }
 
 // used in +page.server.ts

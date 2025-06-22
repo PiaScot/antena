@@ -1,8 +1,10 @@
+//routes/bookmark/+page.server.ts
 import { getBookmarks } from "$lib/api/db/bookmark";
 import type { PageServerLoad } from "./$types";
-import type { ArticleWithSiteName, LoadPageData } from "$lib/types";
+import { error as svelteKitError } from "@sveltejs/kit";
+import type { ArticleFeedItem, LoadPageData } from "$lib/types";
 
-type BookmarkPageData = LoadPageData<ArticleWithSiteName>;
+type BookmarkPageData = LoadPageData<ArticleFeedItem>;
 
 export const load: PageServerLoad<BookmarkPageData> = async () => {
   try {
@@ -11,15 +13,15 @@ export const load: PageServerLoad<BookmarkPageData> = async () => {
       items: bookmarks,
       count: count,
     };
-  } catch (error: any) {
+  } catch (err: unknown) {
+    const errorMessage = err instanceof Error
+      ? err.message
+      : "An unknown error occurred";
     console.error(
       "Error loading bookmarks in /routes/bookmark/+page.server.ts:",
-      error.message,
+      errorMessage,
     );
-    return {
-      items: [],
-      count: 0,
-      error: error.message || "Failed to load bookmark data from db.",
-    };
+
+    throw svelteKitError(500, "ブックマークの読み込みに失敗しました。");
   }
 };

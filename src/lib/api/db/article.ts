@@ -1,93 +1,109 @@
 // src/lib/api/db/article.ts
+
 import { supabase } from "$lib/server/supabase";
 import { ARTICLE_TABLE, SITE_TABLE } from "$env/static/private";
-import type { Article, ArticleWithSiteName } from "$lib/types";
+import type { ArticleFeedItem, FullArticleData } from "$lib/types";
 import { DB_BATCH_SIZE } from "$lib/server/config";
-import { flattenArticle } from "$lib/utils/article";
 
 /**
- * すべての記事を取得
+ * 記事フィードで利用する、最適化されたSELECT文
+ * contentを含まず、表示に必要なサイト情報(title, scrape_options)を結合する
  */
-export async function loadAllArticles(): Promise<ArticleWithSiteName[]> {
+const ARTICLE_FEED_SELECT = `
+  id,
+  site_id,
+  title,
+  url,
+  category,
+  pub_date,
+  thumbnail,
+  site: ${SITE_TABLE} (
+    title,
+    scrape_options
+  )
+`;
+
+/**
+ * すべての記事をフィード用に取得
+ */
+export async function loadAllArticles(): Promise<ArticleFeedItem[]> {
   const { data, error } = await supabase
     .from(ARTICLE_TABLE)
-    .select(`*, site:${SITE_TABLE}(title)`, { count: "exact" })
+    .select(ARTICLE_FEED_SELECT)
     .order("pub_date", { ascending: false })
     .limit(DB_BATCH_SIZE);
 
   if (error) throw error;
-  if (!data || data.length === 0) return [];
-  return data.map(flattenArticle);
+  return data || [];
 }
 
 /**
- * 指定IDの記事を1件取得
+ * 指定IDの記事を1件取得（個別記事ページ用）
  */
 export async function loadArticleByID(
   id: string | number,
-): Promise<ArticleWithSiteName | null> {
+): Promise<FullArticleData | null> {
   const { data, error } = await supabase
     .from(ARTICLE_TABLE)
-    .select(`*, site:${SITE_TABLE}(title)`, { count: "exact" })
+    .select(`
+      *, 
+      site: ${SITE_TABLE}(title)
+    `)
     .eq("id", Number(id))
-    .order("pub_date", { ascending: false })
-    .limit(1);
+    .single();
 
-  if (error) throw error;
-  if (!data || !data[0]) return null;
-  return flattenArticle(data[0]);
+  if (error) {
+    if (error.code === "PGRST116") return null;
+    throw error;
+  }
+  return data;
 }
 
 /**
- * 指定siteIdの記事をすべて取得
+ * 指定siteIdの記事をフィード用にすべて取得
  */
 export async function loadArticlesBySite(
   siteId: string | number,
-): Promise<ArticleWithSiteName[]> {
+): Promise<ArticleFeedItem[]> {
   const { data, error } = await supabase
     .from(ARTICLE_TABLE)
-    .select(`*, site:${SITE_TABLE}(title)`, { count: "exact" })
+    .select(ARTICLE_FEED_SELECT)
     .eq("site_id", Number(siteId))
     .order("pub_date", { ascending: false })
     .limit(DB_BATCH_SIZE);
 
   if (error) throw error;
-  if (!data || data.length === 0) return [];
-  return data.map(flattenArticle);
+  return data || [];
 }
 
 /**
- * カテゴリが2dまたはrealの記事を取得（Art用）
+ * カテゴリがArt(2d, real)の記事をフィード用に取得
  */
-export async function loadArticlesForArtCategory(): Promise<
-  ArticleWithSiteName[]
-> {
+export async function loadArticlesForArtCategory(): Promise<ArticleFeedItem[]> {
   const { data, error } = await supabase
     .from(ARTICLE_TABLE)
-    .select(`*, site:${SITE_TABLE}(title)`, { count: "exact" })
+    .select(ARTICLE_FEED_SELECT)
     .in("category", ["2d", "real"])
     .order("pub_date", { ascending: false })
     .limit(DB_BATCH_SIZE);
 
   if (error) throw error;
-  if (!data || data.length === 0) return [];
-  return data.map(flattenArticle);
+  return data || [];
 }
 
 /**
- * 指定カテゴリの記事をすべて取得
+ * 指定カテゴリの記事をフィード用にすべて取得
  */
 export async function loadArticlesByCategory(
   category: string,
-): Promise<ArticleWithSiteName[]> {
+): Promise<ArticleFeedItem[]> {
   const { data, error } = await supabase
     .from(ARTICLE_TABLE)
-    .select(`*, site:${SITE_TABLE}(title)`, { count: "exact" })
+    .select(ARTICLE_FEED_SELECT)
     .eq("category", category)
     .order("pub_date", { ascending: false })
     .limit(DB_BATCH_SIZE);
 
   if (error) throw error;
-  if (!data || data.length === 0) return [];
-  return data.map(flattenArticle);
+  return data || [];
 }

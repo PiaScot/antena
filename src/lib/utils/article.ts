@@ -1,11 +1,11 @@
-import type { Article, ArticleWithSiteName } from "$lib/types";
+import type { Article, FullArticleData } from "$lib/types";
 
 /**
  * Article from db, trans to ArticleWithSiteName
  */
 export function flattenArticle(
   r: Article & { site?: { title?: string } },
-): ArticleWithSiteName {
+): FullArticleData {
   return {
     id: r.id,
     site_id: r.site_id,
