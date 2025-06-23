@@ -51,7 +51,7 @@ let cardStyle = $state<"image" | "simple">("image");
       <p class="text-center text-slate-600 dark:text-slate-300">表示する記事がありません</p>
     {:else}
       <div class="mx-auto w-full max-w-screen-lg px-1 sm:px-2">
-        <div class="space-y-3">
+        <div class="space-y-1">
           {#each articles as article (article.url)}
             <ArticleCard {article} withImage={cardStyle === "image"} />
           {/each}

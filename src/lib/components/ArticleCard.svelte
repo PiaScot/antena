@@ -59,16 +59,19 @@ async function handleClick() {
 			/>
 		{/if}
 		<div class="flex-1 min-w-0">
-			<div class="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 mb-2">
-				<span>{formattedDate}</span>
+            <div class="flex items-center justify-between gap-4 text-xs text-slate-500 dark:text-slate-400 mb-2">
+				<span class="flex-shrink-0">{formattedDate}</span>
 				{#if article.site?.title}
-					<span class="font-medium text-emerald-700 dark:text-emerald-400 truncate group-hover:underline" title={article.site.title}>
+					<span class="font-medium text-emerald-700 dark:text-emerald-400 truncate text-right flex-1 min-w-0 group-hover:underline" title={article.site.title}>
 						{article.site.title}
 					</span>
 				{/if}
 			</div>
-			<h3 class="text-base font-bold text-slate-800 dark:text-slate-100 line-clamp-2 min-h-[3rem]" title={article.title}>
-				{article.title || "記事タイトル"}
+            <h3
+				class="text-base font-bold text-slate-800 dark:text-slate-100 line-clamp-2 min-h-[3rem]"
+				title={article.title}
+			>
+				{article.title || '記事タイトル'}
 			</h3>
 		</div>
 	</div>
