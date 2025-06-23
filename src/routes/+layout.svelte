@@ -2,6 +2,7 @@
 import "../app.css";
 import { theme, fontSize, fontSizeClassMap } from "$lib/stores/theme";
 import Header from "$lib/components/Header.svelte";
+import ArticleModal from "$lib/components/ArticleModal.svelte";
 import Footer from "$lib/components/Footer.svelte";
 import { page } from "$app/stores";
 import { setCategories } from "$lib/stores/categoryStore";
@@ -61,4 +62,5 @@ $effect(() => {
 	{#if !$page.url.pathname.startsWith("/articles/")}
 		<Footer />
 	{/if}
+  <ArticleModal />
 </div>

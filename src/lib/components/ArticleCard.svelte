@@ -2,47 +2,52 @@
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
-// ★ 新しい、フィード一覧用の型をインポート
-import type { ArticleFeedItem } from "$lib/types";
+import type { ArticleFeedItem, FullArticleData } from "$lib/types";
+import { activeArticle } from "$lib/stores/activeArticle";
+import { LoaderCircle } from "@lucide/svelte";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
 dayjs.tz.setDefault("Asia/Tokyo");
 
 const { article, withImage = true } = $props<{
-	// ★ 受け取るpropsの型を ArticleFeedItem に更新
 	article: ArticleFeedItem;
 	withImage?: boolean;
 }>();
+
+let isLoading = $state(false);
 
 const formattedDate = $derived(
 	dayjs(article.pub_date).tz().format("YYYY/MM/DD HH:mm"),
 );
 
-// --- リンク先を動的に決定するロジック ---
-
-// DBから渡された表示モードを取得（なければデフォルトで 'in_app' とする）
-const displayMode = $derived(
-	article.site?.scrape_options?.display_mode ?? "in_app",
-);
-
-// 表示モードが 'direct_link' かどうかを判定
-const isExternalLink = $derived(displayMode === "direct_link");
-
-// 判定結果に基づいて、リンク先のURLを動的に決定
-const linkUrl = $derived(
-	isExternalLink ? article.url : `/articles/${article.id}`,
-);
-
-// 外部リンクの場合のみ、新しいタブで開くようにtarget属性を設定
-const linkTarget = $derived(isExternalLink ? "_blank" : undefined);
+async function handleClick() {
+	if (article.site?.scrape_options?.display_mode === "direct_link") {
+		window.open(article.url, "_blank", "noopener,noreferrer");
+		return;
+	}
+	isLoading = true;
+	try {
+		const res = await fetch(`/api/articles/${article.id}`);
+		if (!res.ok) {
+			throw new Error(`Failed to fetch article content: ${res.statusText}`);
+		}
+		const fullArticleData: FullArticleData = await res.json();
+		activeArticle.set(fullArticleData);
+	} catch (err) {
+		console.error("Failed to open article modal:", err);
+	} finally {
+		isLoading = false;
+	}
+}
 </script>
 
-<a
-	href={linkUrl}
-	target={linkTarget}
-	rel="noopener noreferrer"
-	class="group block w-full text-left bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-1 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
+<div
+	role="button"
+	tabindex="0"
+	onclick={handleClick}
+	onkeydown={(e) => (e.key === 'Enter' || e.key === ' ') && handleClick()}
+	class="group relative block w-full text-left bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-1 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
 >
 	<div class="flex items-start gap-4">
 		{#if withImage}
@@ -53,7 +58,6 @@ const linkTarget = $derived(isExternalLink ? "_blank" : undefined);
 				loading="lazy"
 			/>
 		{/if}
-
 		<div class="flex-1 min-w-0">
 			<div class="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 mb-2">
 				<span>{formattedDate}</span>
@@ -68,4 +72,10 @@ const linkTarget = $derived(isExternalLink ? "_blank" : undefined);
 			</h3>
 		</div>
 	</div>
-</a>
+
+	{#if isLoading}
+		<div class="absolute inset-0 bg-slate-800/50 flex items-center justify-center rounded-xl">
+			<LoaderCircle class="w-8 h-8 text-white animate-spin" />
+		</div>
+	{/if}
+</div>
