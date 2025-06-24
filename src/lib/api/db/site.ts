@@ -1,6 +1,6 @@
 import { supabase } from "$lib/server/supabase";
 import { ARTICLE_TABLE, SITE_TABLE } from "$env/static/private";
-import type { FullArticleData, Site } from "$lib/types";
+import type { Article, Site } from "$lib/types";
 import { XMLParser } from "fast-xml-parser";
 import { getDomain, randomPCUA } from "$lib/utils";
 
@@ -44,23 +44,75 @@ export async function loadSiteByDomain(domain: string): Promise<Site | null> {
 }
 
 /**
- * 新規サイトを登録します。
+ * 新規サイトを登録し、同時にRSSから取得した記事もDBに保存します。
  * @param site - idを除いたサイト情報
+ * @param articles - 登録する記事情報の配列
  * @returns {Promise<{ ok: boolean; site?: Site; error?: string }>}
  */
 export async function registerSite(
   site: Omit<Site, "id">,
+  articles: Article[] | null,
 ): Promise<{ ok: boolean; site?: Site; error?: string }> {
-  const { data, error } = await supabase
+  const { data: newSite, error: siteError } = await supabase
     .from(SITE_TABLE)
     .insert(site)
     .select()
     .single();
 
-  if (error) {
-    return { ok: false, error: error.message };
+  if (siteError) {
+    console.error("Supabase site insert error:", siteError);
+    if (siteError.code === "23505") {
+      return {
+        ok: false,
+        error: "このサイトのURLまたはRSSは既に登録されています。",
+      };
+    }
+    return { ok: false, error: "サイトのデータベース登録に失敗しました。" };
   }
-  return { ok: true, site: data };
+
+  if (!newSite) {
+    return { ok: false, error: "サイト登録後のデータ取得に失敗しました。" };
+  }
+
+  if (articles && articles.length > 0) {
+    // 【★★★ ここを修正しました ★★★】
+    const articlesToInsert = articles.map((article) => {
+      // 分割代入を使い、`article`オブジェクトから`id`と`site_id`を取り除く。
+      // そして、残りのプロパティを `rest` という新しいオブジェクトに集める。
+      const { id, site_id, ...rest } = article;
+
+      // `id`が含まれていない`rest`を展開し、正しい`site_id`などを設定する。
+      return {
+        ...rest,
+        pub_date: new Date(article.pub_date),
+        site_id: newSite.id,
+      };
+    });
+
+    const { error: articleError } = await supabase
+      .from(ARTICLE_TABLE)
+      .insert(articlesToInsert); // idを含まないオブジェクトの配列を渡す
+
+    if (articleError) {
+      console.error("Supabase article insert error:", articleError);
+
+      await supabase.from(SITE_TABLE).delete().eq("id", newSite.id);
+
+      if (articleError.code === "23505") {
+        return {
+          ok: false,
+          error:
+            `記事の登録に失敗しました。ユニーク制約違反: ${articleError.details}`,
+        };
+      }
+      return {
+        ok: false,
+        error: "記事の登録に失敗したため、サイト登録を中止しました。",
+      };
+    }
+  }
+
+  return { ok: true, site: newSite as Site };
 }
 
 /**
@@ -91,60 +143,66 @@ export async function updateSiteInDB(
  * RSSフィードからサイト情報と最新記事を取得します。
  */
 export async function fetchSiteInfoFromRSS(
-  url: string,
+  siteUrl: string,
+  rssUrl: string,
   category: string,
 ): Promise<{
-  site: Site;
-  articles: FullArticleData[];
+  site: Omit<Site, "id">;
+  articles: Article[];
 }> {
-  const domain = getDomain(url);
-  const rss = await determineRSS(url);
-  if (!rss) throw new Error("RSSフィードが見つかりません");
+  const domain = getDomain(siteUrl);
 
+  // ★★★ 2. パーサーにオプションを追加し、テキストの変換を防ぐ ★★★
   const parser = new XMLParser({
     ignoreAttributes: false,
     attributeNamePrefix: "",
+    // このオプションで、HTMLエンティティ（例: &#x30DE;）を
+    // 元の文字（例: 「マ」）に強制的にデコードします。
+    htmlEntities: true,
   });
-  const resp = await fetch(rss, {
+
+  const resp = await fetch(rssUrl, {
     headers: { "User-Agent": randomPCUA() },
     method: "GET",
   });
-  if (!resp.ok) throw new Error(`Failed to fetch RSS feed: ${resp.statusText}`);
-
-  const text = await resp.text();
-  const xml = parser.parse(text);
-
-  const chan = xml.rss?.channel ?? xml["rdf:RDF"]?.channel ?? xml.feed;
-  if (!chan) {
-    throw new Error(
-      "有効なチャンネルまたはフィードが見つかりません",
-    );
+  if (!resp.ok) {
+    throw new Error(`RSSフィードの取得に失敗しました: ${resp.statusText}`);
   }
 
-  const siteTitle =
-    (typeof chan.title === "object" ? chan.title["#text"] : chan.title) || "";
-  const items = Array.isArray(chan.item)
-    ? chan.item
-    : (chan.item
-      ? [chan.item]
-      : (Array.isArray(chan.entry)
-        ? chan.entry
-        : (chan.entry ? [chan.entry] : [])));
+  const xml = parser.parse(await resp.text());
+  // RSS 1.0 (rdf:RDF) と RSS 2.0 (rss), Atom (feed) の各形式に対応
+  const root = xml["rdf:RDF"] ?? xml.rss ?? xml;
+  const chan = root.channel ?? root.feed;
 
-  const articles: FullArticleData[] = items.map((item) => {
-    const link = item.link?.href ?? item.link ?? "";
-    const pubDate = item.pubDate ?? item.published ?? item["dc:date"] ??
+  if (!chan) throw new Error("有効なRSSフィードの形式ではありません");
+
+  // textNodeNameオプションにより、常にオブジェクトの #text プロパティとして値が取得できる
+  const siteTitle = chan.title?.["#text"] || domain;
+
+  // ★★★ 1. 記事リストの取得ロジックを修正 ★★★
+  // RSS 1.0 では <rdf:RDF> 直下、RSS 2.0/Atomでは <channel> 直下にある item/entry を取得
+  let items = root.item ?? chan.item ?? chan.entry ?? [];
+  // 記事が1件の場合でも配列として扱えるようにする
+  if (!Array.isArray(items)) {
+    items = [items];
+  }
+
+  const articles: Article[] = items.map((item: any) => {
+    const link = item.link?.["#text"] ?? item.link?.href ?? item.link ?? "";
+    const pubDate = item.pubDate?.["#text"] ?? item.published?.["#text"] ??
+      item["dc:date"] ??
       new Date().toISOString();
+    const title = item.title?.["#text"] ?? item.title ?? "";
+
     return {
       id: -1,
       site_id: -1,
-      title: item.title ?? "",
-      site_title: siteTitle,
+      title: title,
       url: link.split("?")[0],
-      category,
-      thumbnail: "",
+      category: category,
+      thumbnail: item["hatena:imageurl"]?.["#text"] ?? "", // はてな固有のサムネイルURLを取得
       pub_date: pubDate,
-      content: "",
+      content: item.description?.["#text"] ?? "", // descriptionも取得しておく
     };
   });
 
@@ -153,21 +211,37 @@ export async function fetchSiteInfoFromRSS(
   );
   const duration_access = calcDurationAccess(pubDates);
 
-  const site: Site = {
-    id: -1,
-    url,
+  const site: Omit<Site, "id"> = {
+    url: siteUrl,
     title: siteTitle,
-    rss,
+    rss: rssUrl,
     category,
     domain,
     last_access: new Date().toISOString(),
     duration_access,
-    scrape_options: { removeSelectorTags: [] },
+    scrape_options: { removeSelectorTags: [], display_mode: "direct_link" },
   };
 
   return { site, articles };
 }
 
+/**
+ * 指定されたIDのサイトを削除します。
+ * DBにON DELETE CASCADEが設定されていれば、関連する記事も自動的に削除されます。
+ * @param id - 削除するサイトのID
+ */
+export async function deleteSiteInDB(id: number): Promise<void> {
+  const { error } = await supabase
+    .from(SITE_TABLE)
+    .delete()
+    .eq("id", id);
+
+  if (error) {
+    console.error(`Failed to delete site (id: ${id}):`, error);
+    // 外部キー制約違反などのDBエラーを呼び出し元にスローする
+    throw error;
+  }
+}
 // ---------- 補助関数 ----------
 
 /** そのドメインが既に登録済みか（API用途） */

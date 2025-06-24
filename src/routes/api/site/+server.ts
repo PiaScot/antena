@@ -1,5 +1,6 @@
 import { json, type RequestHandler } from "@sveltejs/kit";
 import {
+  deleteSiteInDB,
   fetchSiteInfoFromRSS,
   isRegistered,
   loadAllSites,
@@ -8,7 +9,7 @@ import {
   updateSiteInDB,
 } from "$lib/api/db/site";
 import { getDomain } from "$lib/utils";
-import type { Site } from "$lib/types";
+import type { Article, Site } from "$lib/types";
 
 export const GET: RequestHandler = async ({ url }) => {
   try {
@@ -38,11 +39,14 @@ export const POST: RequestHandler = async ({ request }) => {
     const body = await request.json();
 
     if (body.action === "fetch-site-info") {
-      const { url, category } = body;
-      if (!url || !category) {
-        return json({ error: "URLとカテゴリは必須です" }, { status: 400 });
+      const { url, rssUrl, category } = body;
+      if (!url || !rssUrl || !category) {
+        return json(
+          { error: "サイトURL, RSSフィードURL, カテゴリは必須です" },
+          { status: 400 },
+        );
       }
-      return await handleFetchSiteInfo(url, category);
+      return await handleFetchSiteInfo(url, rssUrl, category);
     }
 
     return await handleRegisterSite(body);
@@ -71,26 +75,63 @@ export const PATCH: RequestHandler = async ({ request }) => {
   }
 };
 
-async function handleFetchSiteInfo(url: string, category: string) {
+export const DELETE: RequestHandler = async ({ url }) => {
+  try {
+    const id = url.searchParams.get("id");
+    if (!id) {
+      return json({ error: "サイトIDは必須です" }, { status: 400 });
+    }
+
+    await deleteSiteInDB(Number(id));
+    return json({ ok: true });
+  } catch (err: unknown) {
+    const error = err instanceof Error ? err : new Error(String(err));
+    console.error("Site deletion failed:", error);
+    return json({ error: error.message }, { status: 500 });
+  }
+};
+
+async function handleFetchSiteInfo(
+  url: string,
+  rssUrl: string,
+  category: string,
+) {
   try {
     if (await isRegistered(url)) {
-      return json({ error: "このサイトは既に登録済みです" }, { status: 409 }); // 409 Conflict
+      return json({ error: "このサイトは既に登録済みです" }, { status: 409 });
     }
-    const result = await fetchSiteInfoFromRSS(url, category);
+    const result = await fetchSiteInfoFromRSS(url, rssUrl, category);
     return json(result);
   } catch (err: any) {
     return json({ error: err?.message || "RSS取得失敗" }, { status: 500 });
   }
 }
 
-async function handleRegisterSite(siteData: Omit<Site, "id">) {
+/**
+ * サイトと記事をDBに登録する処理を呼び出します。
+ * @param payload - フロントエンドから送信されたサイト情報と記事リスト
+ */
+async function handleRegisterSite(
+  payload: { site: Omit<Site, "id">; articles: Article[] | null },
+) {
   try {
-    const result = await registerSite(siteData);
-    if (result.ok && result.site) {
-      return json({ ok: true, site: result.site }, { status: 201 }); // 201 Created
+    const { site, articles } = payload;
+
+    if (!site || !site.url) {
+      return json({ error: "サイト情報が不正です" }, { status: 400 });
     }
-    return json({ error: result.error }, { status: 400 });
+    const result = await registerSite(site, articles);
+    if (result.ok && result.site) {
+      return json({ site: result.site }, { status: 201 });
+    } else {
+      return json({ error: result.error || "登録に失敗しました" }, {
+        status: 409,
+      });
+    }
   } catch (err: any) {
-    return json({ error: err?.message || "登録失敗" }, { status: 500 });
+    console.error("登録処理のハンドル中にエラーが発生しました:", err);
+    return json({ error: "登録処理中に予期せぬサーバーエラーが発生しました" }, {
+      status: 500,
+    });
   }
 }

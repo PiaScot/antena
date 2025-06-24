@@ -1,21 +1,35 @@
 <script lang="ts">
 import { browser } from "$app/environment";
 import SiteCard from "$lib/components/SiteCard.svelte";
-import { sites } from "$lib/stores/siteStore";
-import { categories, updateCategory } from "$lib/stores/categoryStore";
+import { sites as sitesStore } from "$lib/stores/siteStore";
+// ★★★ 1. `categories` ストアを直接インポート ★★★
+import { categories } from "$lib/stores/categoryStore";
 import type { Site, Category } from "$lib/types";
 
-const groupedSites = $derived(() => {
-	const groups: Record<string, Site[]> = {};
-	if (!$sites) return groups;
+// --- State ---
+const sites = $derived($sitesStore);
+// `const categories = $derived(...)` は不要なので削除
 
-	for (const site of $sites) {
+// ★★★ 2. 検索ロジックを修正 ★★★
+const filteredAndGroupedSites = $derived(() => {
+	const groups: Record<string, Site[]> = {};
+	if (!sites) return groups;
+
+	const filteredSites = !searchTerm
+		? sites
+		: sites.filter((site) =>
+				site.title.toLowerCase().includes(searchTerm.toLowerCase()),
+			);
+
+	for (const site of filteredSites) {
 		const catId = site.category || "other";
 		if (!groups[catId]) groups[catId] = [];
 		groups[catId].push(site);
 	}
 	return groups;
 });
+
+let searchTerm = $state("");
 
 const CATEGORY_STATE_KEY = "category_visible_state";
 
@@ -26,6 +40,7 @@ $effect(() => {
 	if (saved) {
 		try {
 			const obj = JSON.parse(saved);
+			// ★★★ 3. インポートした `categories` ストアオブジェクトの .update() を使用 ★★★
 			categories.update((cats) =>
 				cats.map((cat) =>
 					obj[cat.id] !== undefined ? { ...cat, visible: obj[cat.id] } : cat,
@@ -40,6 +55,7 @@ $effect(() => {
 $effect(() => {
 	if (!browser) return;
 
+	// ★★★ 4. ストアの値を $categories で直接参照 ★★★
 	if ($categories.length === 0) return;
 
 	const vis = Object.fromEntries(
@@ -49,6 +65,7 @@ $effect(() => {
 });
 
 function toggleCategory(categoryId: string) {
+	// ★★★ 3. インポートした `categories` ストアオブジェクトの .update() を使用 ★★★
 	categories.update((cats) =>
 		cats.map((cat) =>
 			cat.id === categoryId ? { ...cat, visible: !cat.visible } : cat,
@@ -61,7 +78,7 @@ function toggleCategory(categoryId: string) {
 	class="sticky top-16 z-10 border-b border-slate-200 bg-slate-50/90 px-2 py-3 backdrop-blur-sm dark:border-slate-700 dark:bg-slate-900/90"
 >
 	<div class="flex flex-wrap gap-2">
-		{#each $categories || [] as cat}
+        {#each $categories || [] as cat}
 			<button
 				onclick={() => toggleCategory(cat.id)}
 				class="flex-shrink-0 whitespace-nowrap rounded-full px-3 py-1 text-sm font-semibold transition-colors duration-150 {cat.visible
@@ -72,11 +89,20 @@ function toggleCategory(categoryId: string) {
 			</button>
 		{/each}
 	</div>
+
+	<div class="mt-3">
+		<input
+			type="search"
+			bind:value={searchTerm}
+			placeholder="サイト名で検索..."
+			class="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-slate-800 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+		/>
+	</div>
 </div>
 
 <div class="px-2 pb-32">
-	{#each ($categories || []).filter((cat) => cat.visible) as cat}
-		{@const sitesForCategory = groupedSites()[cat.id]}
+    {#each ($categories || []).filter((cat) => cat.visible) as cat}
+		{@const sitesForCategory = filteredAndGroupedSites()[cat.id]}
 		{#if sitesForCategory?.length > 0}
 			<div class="mb-8">
 				<div class="mb-2 flex items-center gap-2">
