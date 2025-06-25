@@ -47,7 +47,7 @@ async function handleClick() {
 	tabindex="0"
 	onclick={handleClick}
 	onkeydown={(e) => (e.key === 'Enter' || e.key === ' ') && handleClick()}
-	class="group relative block w-full text-left bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-1 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
+	class="group relative block w-full text-left bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-2 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
 >
 	<div class="flex items-start gap-4">
 		{#if withImage}

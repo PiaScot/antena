@@ -17,9 +17,15 @@ export const GET: RequestHandler = async ({ url }) => {
 
     const articles = await getBookmarks();
     return json({ articles });
-  } catch (err: any) {
-    console.error(err);
-    return json({ error: err.message }, { status: 500 });
+  } catch (err: unknown) {
+    const errorMessage = err instanceof Error
+      ? err.message
+      : "An unknown error occurred";
+    console.error(
+      "Error GET Request in/api/bookmark/+page.server.ts:",
+      errorMessage,
+    );
+    return json({ error: errorMessage }, { status: 500 });
   }
 };
 
@@ -28,8 +34,15 @@ export const POST: RequestHandler = async ({ request }) => {
     const article: Article = await request.json();
     const result = await upsertBookmark(article);
     return json({ ok: true, result });
-  } catch (err: any) {
-    return json({ error: err.message }, { status: 500 });
+  } catch (err: unknown) {
+    const errorMessage = err instanceof Error
+      ? err.message
+      : "An unknown error occurred";
+    console.error(
+      "Error POST Request in/api/bookmark/+page.server.ts:",
+      errorMessage,
+    );
+    return json({ error: errorMessage }, { status: 500 });
   }
 };
 
@@ -41,7 +54,14 @@ export const DELETE: RequestHandler = async ({ url }) => {
     }
     const result = await deleteBookmark(id);
     return json({ ok: true, result });
-  } catch (err: any) {
-    return json({ error: err.message }, { status: 500 });
+  } catch (err: unknown) {
+    const errorMessage = err instanceof Error
+      ? err.message
+      : "An unknown error occurred";
+    console.error(
+      "Error DELETE Request in/api/bookmark/+page.server.ts:",
+      errorMessage,
+    );
+    return json({ error: errorMessage }, { status: 500 });
   }
 };

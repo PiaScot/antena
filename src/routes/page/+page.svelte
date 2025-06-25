@@ -75,7 +75,7 @@ function toggleCategory(categoryId: string) {
 </script>
 
 <div
-	class="sticky top-16 z-10 border-b border-slate-200 bg-slate-50/90 px-2 py-3 backdrop-blur-sm dark:border-slate-700 dark:bg-slate-900/90"
+	class="top-16 z-10 border-b border-slate-200 bg-slate-50/90 px-2 py-3 backdrop-blur-sm dark:border-slate-700 dark:bg-slate-900/90"
 >
 	<div class="flex flex-wrap gap-2">
         {#each $categories || [] as cat}
@@ -109,7 +109,7 @@ function toggleCategory(categoryId: string) {
 					<span class="text-lg font-bold text-emerald-700 dark:text-emerald-300">{cat.label}</span>
 					<span class="text-xs text-slate-500 dark:text-slate-400">({sitesForCategory.length})</span>
 				</div>
-				<div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+				<div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
 					{#each sitesForCategory as site (site.id)}
 						<SiteCard {site} />
 					{/each}

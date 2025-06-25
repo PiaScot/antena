@@ -6,7 +6,7 @@ const { site } = $props<{ site: Site }>();
 
 <a
 	href={`/feed?site=${site.id}`}
-	class="site-card-link rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 p-3 shadow flex flex-col gap-1 min-h-0 transition hover:shadow-lg focus-visible:ring-2 focus-visible:ring-emerald-400 outline-none"
+	class="site-card-link border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 p-3 shadow flex flex-col gap-1 min-h-0 transition hover:shadow-lg focus-visible:ring-2 focus-visible:ring-emerald-400 outline-none"
 >
 	<h2 class="text-base font-bold text-slate-900 dark:text-slate-100 break-all leading-tight">{site.title}</h2>
 	<p class="text-xs text-slate-600 dark:text-slate-400 break-all leading-tight">{site.domain || "No Domain"}</p>

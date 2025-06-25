@@ -1,14 +1,6 @@
 <script lang="ts">
-import {
-	Check,
-	X,
-	ArrowUp,
-	ArrowDown,
-	Plus,
-	Trash2,
-	Save,
-	LoaderCircle,
-} from "@lucide/svelte";
+import { droppable, draggable, type DragDropState } from "@thisux/sveltednd";
+import { Check, X, Plus, Trash2, Save, LoaderCircle } from "@lucide/svelte";
 import {
 	sites as sitesStore,
 	clearCategoryFromSites,
@@ -22,7 +14,6 @@ import {
 } from "$lib/stores/categoryStore";
 import type { Category } from "$lib/types";
 
-// --- State ---
 const categories = $derived($categoriesStore);
 let displayCategories = $state<Category[]>([]);
 let gridCols = $state(2);
@@ -39,23 +30,20 @@ let categoryState = $state({
 	isProcessing: false,
 });
 
-// --- Effects ---
 $effect(() => {
 	displayCategories = JSON.parse(JSON.stringify(categories));
 });
 
-// --- Functions ---
+function handleDrop(state: DragDropState<Category>) {
+	const { draggedItem, targetContainer } = state;
+	const items = displayCategories;
+	const dragIndex = items.findIndex((item) => item.id === draggedItem.id);
+	const dropIndex = Number.parseInt(targetContainer ?? dragIndex.toString());
 
-function moveCategory(index: number, direction: "up" | "down") {
-	if (direction === "up" && index === 0) return;
-	if (direction === "down" && index === displayCategories.length - 1) return;
-
-	const newIndex = direction === "up" ? index - 1 : index + 1;
-	const items = [...displayCategories];
-	// 要素を入れ替え
-	[items[index], items[newIndex]] = [items[newIndex], items[index]];
-
-	displayCategories = items;
+	if (dragIndex !== -1 && !Number.isNaN(dropIndex)) {
+		const [reorderedItem] = items.splice(dragIndex, 1);
+		items.splice(dropIndex, 0, reorderedItem);
+	}
 }
 
 function toggleVisible(id: string) {
@@ -214,60 +202,44 @@ function cancelDelete() {
 		<div class="flex justify-center items-center gap-4 mb-6">
 		</div>
 
-		<ul
-			class="grid gap-3 mb-6"
-			style="grid-template-columns: repeat({gridCols}, minmax(0, 1fr));"
-		>
-			{#each displayCategories as cat, index (cat.id)}
-				<li>
-					<div
-						class="relative flex items-center pr-10 pl-12 h-16 rounded-xl border-2 shadow transition-all select-none cursor-pointer {cat.visible
-							? 'bg-emerald-500/90 border-emerald-400 text-white'
-							: 'bg-slate-200 dark:bg-slate-600 text-slate-800 dark:text-slate-200 opacity-60'}"
-						tabindex="0"
-						aria-pressed={cat.visible}
-						onclick={() => toggleVisible(cat.id)}
-					>
-						<div class="absolute left-1 top-1/2 -translate-y-1/2 flex flex-col">
-							<button
-								type="button"
-								title="上へ"
-								class="p-1 rounded-full hover:bg-black/10 disabled:opacity-30 disabled:cursor-not-allowed"
-								disabled={index === 0}
-								onclick={(e) => {
-									e.stopPropagation();
-									moveCategory(index, 'up');
-								}}
-							>
-								<ArrowUp class="w-4 h-4" />
-							</button>
-							<button
-								type="button"
-								title="下へ"
-								class="p-1 rounded-full hover:bg-black/10 disabled:opacity-30 disabled:cursor-not-allowed"
-								disabled={index === displayCategories.length - 1}
-								onclick={(e) => {
-									e.stopPropagation();
-									moveCategory(index, 'down');
-								}}
-							>
-								<ArrowDown class="w-4 h-4" />
-							</button>
-						</div>
+    <div
+      class="grid gap-3 mb-6"
+        style="grid-template-columns: repeat({gridCols}, minmax(0, 1fr));"
+      >
+      {#each displayCategories as cat, index (cat.id)}
+      <div
+        use:draggable={{
+          container: index.toString(),
+          dragData: cat,
+          interactive: ['[data-delete-btn]', '[data-select-btn]', '.interactive'],
+        }}
+        use:droppable={{
+          container: index.toString(),
+          callbacks: { onDrop: handleDrop }
+        }}
+        class="relative flex items-center pr-10 pl-4 h-16 rounded-xl border-2 shadow select-none cursor-grab {cat.visible
+          ? 'bg-emerald-500/90 border-emerald-400 text-white'
+          : 'bg-slate-200 dark:bg-slate-600 text-slate-800 dark:text-slate-200 opacity-60'}"
+        tabindex="0"
+      >
+        <button
+          data-select-btn
+          class="flex-1 h-full text-lg font-semibold text-center"
+          onclick={() => toggleVisible(cat.id)}
+        >
+          {cat.label}
+        </button>
 
-						<span class="flex-1 text-lg font-semibold text-center">{cat.label}</span>
-
-						<span class="absolute right-3 top-1/2 -translate-y-1/2">
-							{#if cat.visible}
-								<Check class="w-5 h-5" />
-							{:else}
-								<X class="w-5 h-5" />
-							{/if}
-						</span>
-					</div>
-				</li>
-			{/each}
-		</ul>
+        <span class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+          {#if cat.visible}
+            <Check class="w-5 h-5" />
+          {:else}
+            <X class="w-5 h-5" />
+        {/if}
+        </span>
+      </div>
+      {/each}
+    </div>
 		<div class="flex gap-4 justify-center">
 			<button type="button" onclick={saveHomepageSettings} class="bg-emerald-600 text-white px-5 py-2 rounded-lg hover:bg-emerald-700 font-semibold flex-1">この表示設定を保存</button>
 			<button type="button" onclick={cancelHomepageSettings} class="bg-gray-300 text-gray-700 px-5 py-2 rounded-lg hover:bg-gray-400 dark:bg-gray-600 dark:text-white flex-1 font-semibold">キャンセル</button>

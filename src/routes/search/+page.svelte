@@ -9,7 +9,7 @@ const articlesPromise = data.streamed.articles;
 let searchTerm = $state("");
 </script>
 
-<div class="max-w-2xl mx-auto py-10 px-4">
+<div class="max-w-2xl mx-auto py-10 px-1">
 	<h2 class="text-2xl font-bold mb-4 text-center text-slate-800 dark:text-white">記事検索</h2>
 	<div class="relative mb-6">
 		<input
@@ -52,7 +52,7 @@ let searchTerm = $state("");
 				{/if}
 			</div>
 		{:else}
-			<ul class="space-y-3">
+			<ul>
 				{#each filteredArticles as article (article.id)}
 					<li>
 						<ArticleCard {article} />

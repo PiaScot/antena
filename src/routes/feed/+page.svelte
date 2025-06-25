@@ -7,10 +7,10 @@ import type { ArticleFeedItem } from "$lib/types";
 const { data } = $props<{ data: PageData }>();
 const articlesPromise = data.streamed.articles as Promise<ArticleFeedItem[]>;
 
-let cardStyle = $state<"image" | "simple">("image");
+let cardStyle = $state<"image" | "simple">("simple");
 </script>
 
-<div class="bg-emerald-400/10 dark:bg-slate-900/90 max-w-2xl mx-auto py-3 px-3 sticky top-16 z-10 backdrop-blur-sm">
+<div class="bg-emerald-400/10 dark:bg-slate-900/90 max-w-2xl mx-auto py-1 ticky top-16 z-10 backdrop-blur-sm">
   <div class="flex justify-center items-center gap-4 py-2">
     <button
       onclick={() => cardStyle = "image"}
@@ -41,7 +41,7 @@ let cardStyle = $state<"image" | "simple">("image");
   </div>
 </div>
 
-<div class="max-w-2xl mx-auto py-3 px-1">
+<div class="max-w-2xl mx-auto py-1">
   {#await articlesPromise}
     <p class="text-center text-slate-600 dark:text-slate-300 py-10">
       記事を取得中...

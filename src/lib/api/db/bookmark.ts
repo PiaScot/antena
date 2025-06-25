@@ -2,13 +2,9 @@
 
 import { supabase } from "$lib/server/supabase";
 import { ARTICLE_TABLE, BOOKMARK_TABLE, SITE_TABLE } from "$env/static/private";
-import type { Article, ArticleFeedItem, FullArticleData } from "$lib/types"; // ★利用する型を更新
+import type { Article, ArticleFeedItem, FullArticleData } from "$lib/types";
 import { DB_BATCH_SIZE } from "$lib/server/config";
-// flattenArticleは不要になったのでインポートから削除
 
-/**
- * ブックマーク一覧（フィード）で利用する、最適化されたSELECT文
- */
 const BOOKMARK_FEED_SELECT = `
   id,
   site_id,

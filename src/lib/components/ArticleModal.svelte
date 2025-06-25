@@ -197,7 +197,7 @@ function closeModal() {
             お使いのブラウザは iframe をサポートしていません。
           </iframe>
         {:else}
-          <div class="p-4" bind:this={shadowHostElement} />
+          <div bind:this={shadowHostElement} />
         {/if}
       </div>
 		</div>
