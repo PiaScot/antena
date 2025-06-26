@@ -7,6 +7,8 @@ import {
 	Trash2,
 	Save,
 	AlertTriangle,
+	ExternalLink,
+	AppWindow,
 } from "@lucide/svelte";
 import {
 	sites as sitesStore,
@@ -168,7 +170,6 @@ async function registerSite() {
 	}
 }
 
-// --- Functions for Editing a Site ---
 function startEdit(site: Site) {
 	editState.editingSiteId = site.id;
 	editState.form = { ...site };
@@ -176,6 +177,20 @@ function startEdit(site: Site) {
 
 function cancelEdit() {
 	editState.editingSiteId = null;
+}
+
+function toggleDisplayMode() {
+	if (!editState.form.scrape_options) {
+		editState.form.scrape_options = { removeSelectorTags: [] };
+	}
+
+	const currentMode = editState.form.scrape_options.display_mode;
+
+	if (currentMode === "direct_link") {
+		editState.form.scrape_options.display_mode = "in_app";
+	} else {
+		editState.form.scrape_options.display_mode = "direct_link";
+	}
 }
 
 async function commitEdit() {
@@ -361,6 +376,7 @@ async function addCategoryFromModal() {
 					{@const site = siteData as Site}
 					<div class="rounded-xl bg-slate-100 dark:bg-slate-800 shadow p-4">
 						{#if editState.editingSiteId === site.id}
+              {@const currentMode = editState.form.scrape_options?.display_mode ?? 'in_app'}
 							<div class="flex flex-col gap-2">
 								<input type="text" bind:value={editState.form.title} class="block w-full rounded-lg border-emerald-400 bg-white dark:bg-slate-700 text-slate-900 dark:text-white px-3 py-2 border" placeholder="サイト名" />
 								<div class="flex items-center gap-2">
@@ -372,6 +388,20 @@ async function addCategoryFromModal() {
 								</div>
 								<input type="text" bind:value={editState.form.url} class="block w-full rounded-lg border-emerald-400 bg-white dark:bg-slate-700 text-slate-900 dark:text-white px-3 py-2 border" placeholder="URL" />
 								<input type="text" bind:value={editState.form.rss} class="block w-full rounded-lg border-emerald-400 bg-white dark:bg-slate-700 text-slate-900 dark:text-white px-3 py-2 border" placeholder="RSS" />
+
+                <div class="flex items-center justify-between gap-2 p-2 rounded-lg border border-emerald-400 bg-white dark:bg-slate-700">
+                  <label class="font-medium text-sm text-slate-700 dark:text-slate-300">表示モード:</label>
+                  <button onclick={toggleDisplayMode} type="button" class="flex items-center gap-2 px-3 py-1 rounded-md text-sm font-semibold transition {currentMode === 'direct_link' ? 'bg-sky-100 text-sky-700 hover:bg-sky-200 dark:bg-sky-900/50 dark:text-sky-300' : 'bg-slate-200 text-slate-700 hover:bg-slate-300 dark:bg-slate-600 dark:text-slate-200'}">
+                    {#if currentMode === 'direct_link'}
+                      <ExternalLink class="w-4 h-4" />
+                      <span>外部リンク</span>
+                    {:else}
+                      <AppWindow class="w-4 h-4" />
+                      <span>アプリ内表示</span>
+                    {/if}
+                  </button>
+                </div>
+
 								<div class="flex gap-3 mt-2">
 									<button onclick={() => confirmDelete(site)} class="bg-red-600 text-white px-3 py-2 rounded-lg hover:bg-red-700 font-semibold" aria-label="削除"><Trash2 class="w-5 h-5"/></button>
 									<button onclick={commitEdit} class="bg-emerald-600 text-white px-4 py-2 rounded-lg hover:bg-emerald-700 flex-1 font-semibold flex items-center justify-center" disabled={editState.isProcessing}>

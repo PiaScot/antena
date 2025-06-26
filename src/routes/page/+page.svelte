@@ -2,15 +2,12 @@
 import { browser } from "$app/environment";
 import SiteCard from "$lib/components/SiteCard.svelte";
 import { sites as sitesStore } from "$lib/stores/siteStore";
-// ★★★ 1. `categories` ストアを直接インポート ★★★
 import { categories } from "$lib/stores/categoryStore";
 import type { Site, Category } from "$lib/types";
 
 // --- State ---
 const sites = $derived($sitesStore);
-// `const categories = $derived(...)` は不要なので削除
 
-// ★★★ 2. 検索ロジックを修正 ★★★
 const filteredAndGroupedSites = $derived(() => {
 	const groups: Record<string, Site[]> = {};
 	if (!sites) return groups;
@@ -40,7 +37,6 @@ $effect(() => {
 	if (saved) {
 		try {
 			const obj = JSON.parse(saved);
-			// ★★★ 3. インポートした `categories` ストアオブジェクトの .update() を使用 ★★★
 			categories.update((cats) =>
 				cats.map((cat) =>
 					obj[cat.id] !== undefined ? { ...cat, visible: obj[cat.id] } : cat,
@@ -55,7 +51,6 @@ $effect(() => {
 $effect(() => {
 	if (!browser) return;
 
-	// ★★★ 4. ストアの値を $categories で直接参照 ★★★
 	if ($categories.length === 0) return;
 
 	const vis = Object.fromEntries(
@@ -65,7 +60,6 @@ $effect(() => {
 });
 
 function toggleCategory(categoryId: string) {
-	// ★★★ 3. インポートした `categories` ストアオブジェクトの .update() を使用 ★★★
 	categories.update((cats) =>
 		cats.map((cat) =>
 			cat.id === categoryId ? { ...cat, visible: !cat.visible } : cat,
