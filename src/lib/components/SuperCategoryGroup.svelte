@@ -23,7 +23,7 @@ let newCategoryLabel = $state("");
 let newCategoryId = $state("");
 let newCategoryInputElement = $state<HTMLInputElement>();
 
-// --- Super Category Functions (No changes here) ---
+// --- Super Category Functions ---
 function startEditingLabel() {
 	if (!$isLayoutEditMode) return;
 	isEditingLabel = true;
@@ -94,7 +94,7 @@ async function handleDeleteGroup() {
 	}
 }
 
-// --- Child Category Functions (No changes here) ---
+// --- Child Category Functions ---
 function showAddCategoryForm() {
 	isAddingCategory = true;
 	setTimeout(() => newCategoryInputElement?.focus(), 0);
@@ -149,21 +149,18 @@ async function submitNewCategory() {
 	}
 }
 
-// ★★★ This is the updated function ★★★
 async function handleDrop(
 	e: CustomEvent<{
 		items: Category[];
 		info: { id: string; source: { id: number | "uncategorized" } };
 	}>,
 ) {
-	// The dnd-action library updates the local `group.categories` array for us.
 	group.categories = e.detail.items;
 
 	const droppedItemId = e.detail.info.id;
 	const sourceGroupId = e.detail.info.source.id;
 	const targetGroupId = group.id;
 
-	// Only make an API call if the category was moved to a different group.
 	if (sourceGroupId !== targetGroupId) {
 		console.log(
 			`Moving category ${droppedItemId} from group ${sourceGroupId} to ${targetGroupId}`,
@@ -177,8 +174,8 @@ async function handleDrop(
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({
 					originalId: droppedItemId,
-					id: droppedItemId, // ID itself is not changing
-					label: droppedItem.label, // Label is not changing
+					id: droppedItemId,
+					label: droppedItem.label,
 					super_category_id:
 						targetGroupId === "uncategorized" ? null : targetGroupId,
 				}),
@@ -191,7 +188,6 @@ async function handleDrop(
 				);
 			}
 
-			// On successful DB update, update the central flat category store
 			categoriesStore.update((cats) =>
 				cats.map((c) =>
 					c.id === droppedItemId
@@ -208,21 +204,20 @@ async function handleDrop(
 			alert(
 				"カテゴリのグループ移動に失敗しました。ページをリロードしてやり直してください。",
 			);
-			// In a real app, you might want to revert the UI change here
 		}
 	}
 }
 </script>
 
-<!-- The entire section is now a draggable item for reordering super categories -->
-<section
-	class="flex flex-col"
-	use:dndzone={{ items: [group], id: `super-${group.id}`, type: 'super-category', disabled: !$isLayoutEditMode }}
->
+<!-- ★★★ The root element no longer needs the dndzone action ★★★ -->
+<section class="flex flex-col">
 	<!-- Header section -->
 	{#if $isLayoutEditMode}
 		<!-- Edit Mode Header -->
-		<header class="relative flex items-center gap-2 mb-3">
+		<header 
+			class="relative flex items-center gap-2 mb-3"
+			use:dndzone={{ items: [group], id: `super-${group.id}`, type: 'super-category' }}
+		>
 			<button class="cursor-grab text-slate-400 hover:text-slate-600" title="このグループをドラッグ">
 				<GripVertical />
 			</button>
@@ -257,18 +252,19 @@ async function handleDrop(
 	{/if}
 
 
-	<!-- Dropzone for child categories -->
-	<div
-		class="grid grid-cols-2 gap-2 min-h-[5rem] rounded-lg transition-colors { $isLayoutEditMode ? 'p-2 bg-slate-200/50 dark:bg-slate-800/50' : '' }"
-		use:dndzone={{ items: group.categories, id: group.id, type: 'category', disabled: !$isLayoutEditMode }}
-		onfinalize={handleDrop}
-	>
-		{#each group.categories as cat (cat.id)}
-			<CategoryCard {cat} />
-		{/each}
+	<!-- Child categories container -->
+	{#if $isLayoutEditMode}
+		<!-- ★★★ In Edit Mode, the div is a dropzone ★★★ -->
+		<div
+			class="grid grid-cols-2 gap-2 min-h-[5rem] rounded-lg p-2 bg-slate-200/50 dark:bg-slate-800/50 transition-colors"
+			use:dndzone={{ items: group.categories, id: group.id, type: 'category' }}
+			onfinalize={handleDrop}
+		>
+			{#each group.categories as cat (cat.id)}
+				<CategoryCard {cat} />
+			{/each}
 
-		<!-- "Add New Category" placeholder card / form -->
-		{#if $isLayoutEditMode}
+			<!-- Add New Category placeholder / form -->
 			{#if !isAddingCategory}
 				<div transition:slide|local>
 					<button 
@@ -288,6 +284,13 @@ async function handleDrop(
 					</div>
 				</div>
 			{/if}
-		{/if}
-	</div>
+		</div>
+	{:else}
+		<!-- ★★★ In View Mode, the div is a simple container with no dndzone ★★★ -->
+		<div class="grid grid-cols-2 gap-2">
+			{#each group.categories as cat (cat.id)}
+				<CategoryCard {cat} />
+			{/each}
+		</div>
+	{/if}
 </section>
