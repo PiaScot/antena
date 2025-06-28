@@ -22,23 +22,24 @@ const formattedDate = $derived(
 );
 
 async function handleClick() {
-	if (article.site?.scrape_options?.display_mode === "direct_link") {
-		window.open(article.url, "_blank", "noopener,noreferrer");
-		return;
-	}
-	isLoading = true;
-	try {
-		const res = await fetch(`/api/articles/${article.id}`);
-		if (!res.ok) {
-			throw new Error(`Failed to fetch article content: ${res.statusText}`);
-		}
-		const fullArticleData: FullArticleData = await res.json();
-		activeArticle.set(fullArticleData);
-	} catch (err) {
-		console.error("Failed to open article modal:", err);
-	} finally {
-		isLoading = false;
-	}
+	window.open(article.url, "_blank", "noopener,noreferrer");
+	// if (article.site?.scrape_options?.display_mode === "direct_link") {
+	// 	window.open(article.url, "_blank", "noopener,noreferrer");
+	// 	return;
+	// }
+	// isLoading = true;
+	// try {
+	// 	const res = await fetch(`/api/articles/${article.id}`);
+	// 	if (!res.ok) {
+	// 		throw new Error(`Failed to fetch article content: ${res.statusText}`);
+	// 	}
+	// 	const fullArticleData: FullArticleData = await res.json();
+	// 	activeArticle.set(fullArticleData);
+	// } catch (err) {
+	// 	console.error("Failed to open article modal:", err);
+	// } finally {
+	// 	isLoading = false;
+	// }
 }
 </script>
 
@@ -52,7 +53,7 @@ async function handleClick() {
 	<div class="flex items-start gap-4">
 		{#if withImage}
 			<img
-				src={article.thumbnail ? article.thumbnail : '/favicon.png'}
+        src={article.thumbnail ? `/api/image-proxy?url=${encodeURIComponent(article.thumbnail)}` : '/favicon.png'}
 				alt="サムネイル"
 				class="w-20 h-20 rounded-lg object-cover flex-shrink-0 border border-slate-200 dark:border-slate-600"
 				loading="lazy"
