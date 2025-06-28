@@ -2,7 +2,7 @@
 
 import type { RequestHandler } from "@sveltejs/kit";
 
-export const GET: RequestHandler = async ({ url }) => {
+export const GET: RequestHandler = async ({ url, fetch }) => {
   try {
     const imageUrl = url.searchParams.get("url");
 
@@ -18,12 +18,15 @@ export const GET: RequestHandler = async ({ url }) => {
     });
 
     if (!response.ok) {
+      console.error(
+        `Failed to fetch image from ${imageUrl}. Status: ${response.status}`,
+      );
       return new Response("Failed to fetch image", { status: response.status });
     }
 
     const headers = new Headers({
       "Content-Type": response.headers.get("Content-Type") || "image/jpeg",
-      "Cache-Control": "public, max-age=604800, immutable",
+      "Cache-Control": "public, max-age=604800, immutable", // 1 week cache
     });
 
     return new Response(response.body, { headers });
