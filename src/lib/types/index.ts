@@ -35,6 +35,19 @@ export interface Category {
   id: string;
   label: string;
   visible: boolean;
+  super_category_id: number;
+}
+
+// same definition with supabase registered schema
+export interface SuperCategory {
+  id: string;
+  label: string;
+  order: number;
+  created_at: string;
+}
+
+export interface SuperCategoryGroup extends SuperCategory {
+  categories: Category[];
 }
 
 /**

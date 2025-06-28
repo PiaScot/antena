@@ -1,5 +1,3 @@
-// src/routes/api/category/+server.ts
-
 import { json, type RequestHandler } from "@sveltejs/kit";
 import {
   createCategoryInDB,
@@ -12,24 +10,26 @@ import {
  */
 export const POST: RequestHandler = async ({ request }) => {
   try {
-    const { id, label } = await request.json();
-    if (!id || typeof id !== "string" || !label || typeof label !== "string") {
-      return json({ error: "IDとラベルは必須です" }, { status: 400 });
+    const body = await request.json();
+    const { id, label, super_category_id } = body;
+
+    if (!id || !label) {
+      return json({ error: "`id`と`label`は必須です。" }, { status: 400 });
     }
-    const newCategory = await createCategoryInDB(id, label);
-    return json({ category: newCategory }, { status: 201 });
-  } catch (err: unknown) {
-    const errorMessage = err instanceof Error
-      ? err.message
-      : "不明なエラーが発生しました。";
-    console.error("Category creation failed:", errorMessage);
 
-    let status = 500;
-    if (errorMessage.includes("既に存在します")) status = 409;
-    if (errorMessage.includes("IDは半角英数字")) status = 400;
+    const newCategory = await createCategoryInDB({
+      id,
+      label,
+      super_category_id: super_category_id ?? null,
+    });
 
-    // ★ 必ずerrorMessage（文字列）を返す
-    return json({ error: errorMessage }, { status });
+    return json(newCategory, { status: 201 });
+  } catch (err) {
+    const errorMessage = err instanceof Error ? err.message : "Unknown error";
+    console.error("Error creating category:", errorMessage);
+    return json({ error: `カテゴリの作成に失敗しました: ${errorMessage}` }, {
+      status: 500,
+    });
   }
 };
 
@@ -38,13 +38,28 @@ export const POST: RequestHandler = async ({ request }) => {
  */
 export const PATCH: RequestHandler = async ({ request }) => {
   try {
-    const { originalId, id, label } = await request.json();
+    // ★★★ 1. super_category_id も受け取るように修正 ★★★
+    const { originalId, id, label, super_category_id } = await request.json();
+
     if (!originalId || !id || !label) {
       return json({ error: "更新対象のIDと、新しいID・ラベルは必須です" }, {
         status: 400,
       });
     }
-    const updatedCategory = await updateCategoryInDB(originalId, { id, label });
+
+    // ★★★ 2. DB関数に渡すオブジェクトを構築 ★★★
+    const updates: {
+      id: string;
+      label: string;
+      super_category_id?: number | null;
+    } = { id, label };
+
+    // super_category_id がリクエストに含まれている場合のみ、updatesオブジェクトに追加
+    if (super_category_id !== undefined) {
+      updates.super_category_id = super_category_id;
+    }
+
+    const updatedCategory = await updateCategoryInDB(originalId, updates);
     return json({ category: updatedCategory }, { status: 200 });
   } catch (err: unknown) {
     const errorMessage = err instanceof Error
@@ -57,7 +72,6 @@ export const PATCH: RequestHandler = async ({ request }) => {
       status = 409;
     }
 
-    // ★ 必ずerrorMessage（文字列）を返す
     return json({ error: errorMessage }, { status });
   }
 };
@@ -72,8 +86,8 @@ export const DELETE: RequestHandler = async ({ url }) => {
       return json({ error: "カテゴリIDは必須です" }, { status: 400 });
     }
     await deleteCategoryInDB(id);
-    return json({ ok: true });
-  } catch (err: unknown) { // ★ anyの代わりにunknownを使用
+    return new Response(null, { status: 204 }); // 成功時は 204 No Content を返すのが一般的
+  } catch (err: unknown) {
     const errorMessage = err instanceof Error
       ? err.message
       : "不明なエラーが発生しました。";

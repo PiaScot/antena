@@ -1,5 +1,5 @@
 // src/lib/stores/categoryStore.ts
-import type { Category } from "$lib/types";
+import type { Category, SuperCategoryGroup } from "$lib/types";
 import { get, writable } from "svelte/store";
 
 /**
@@ -13,6 +13,16 @@ export const categories = writable<Category[]>([]);
  */
 export function setCategories(cats: Category[]) {
   categories.set(cats);
+}
+
+export const superCategoryGroups = writable<SuperCategoryGroup[]>([]);
+
+/**
+ * ストアに大カテゴリの階層化リストをセットする
+ * @param groups 新しい大カテゴリグループの配列
+ */
+export function setSuperCategoryGroups(groups: SuperCategoryGroup[]) {
+  superCategoryGroups.set(groups);
 }
 
 /**

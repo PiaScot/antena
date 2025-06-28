@@ -1,34 +1,26 @@
-// src/routes/+layout.server.ts
-import { supabase } from "$lib/server/supabase";
-import { CATEGORY_TABLE, SITE_TABLE } from "$env/static/private";
 import type { LayoutServerLoad } from "./$types";
-import type { Category, Site } from "$lib/types";
+import {
+  loadAllCategories,
+  loadSuperCategoryGroups,
+} from "$lib/api/db/category";
+import { loadAllSites } from "$lib/api/db/site";
 
-export const load: LayoutServerLoad<
-  { sites: Site[]; categories: Category[]; error?: string }
-> = async () => {
+export const load: LayoutServerLoad = async () => {
   try {
-    const { data: sites, error: siteError } = await supabase
-      .from<Site>(SITE_TABLE)
-      .select("*");
-
-    if (siteError) throw siteError;
-    if (!sites.length) throw new Error("No Found site data from db");
-
-    const { data: categories, error: catError } = await supabase
-      .from<Category>(CATEGORY_TABLE)
-      .select("*");
-
-    if (catError) throw catError;
-    if (!categories.length) throw new Error("No Found category data from db");
+    const { sites } = await loadAllSites();
+    const categories = await loadAllCategories();
+    const superCategoryGroups = await loadSuperCategoryGroups();
     return {
-      sites: sites ?? [],
-      categories: categories ?? [],
+      sites,
+      categories,
+      superCategoryGroups,
     };
   } catch (error: any) {
+    console.error("Layout data loading failed:", error);
     return {
       sites: [],
       categories: [],
+      superCategoryGroups: [],
       error: error.message,
     };
   }

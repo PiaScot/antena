@@ -1,6 +1,7 @@
 <script lang="ts">
 import { page } from "$app/stores";
-import { ArrowLeft, Pencil } from "@lucide/svelte";
+import { isLayoutEditMode } from "$lib/stores/uiStore";
+import { ArrowLeft, Pencil, LayoutDashboard, Check } from "@lucide/svelte";
 </script>
 
 <div class="h-16" />
@@ -10,13 +11,8 @@ import { ArrowLeft, Pencil } from "@lucide/svelte";
 >
 	<nav class="flex w-full items-center justify-between">
 		<div class="w-24 flex justify-start">
-			{#if $page.url.pathname === '/'}
-				<a href="/edit/home" class="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 transition-colors" aria-label="編集">
-					<Pencil class="w-5 h-5" />
-					<span class="text-lg">編集</span>
-				</a>
-			{:else if $page.url.pathname === '/page'}
-				<a href="/edit/page" class="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 transition-colors" aria-label="編集">
+			{#if $page.url.pathname === '/page'}
+				<a href="/edit/page" class="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 transition-colors" aria-label="サイト編集">
 					<Pencil class="w-5 h-5" />
 					<span class="text-lg">編集</span>
 				</a>
@@ -36,7 +32,7 @@ import { ArrowLeft, Pencil } from "@lucide/svelte";
 			{:else if $page.url.pathname === '/page'}
 				サイト一覧
 			{:else if $page.url.pathname.startsWith('/edit/home')}
-				ホーム画面編集
+				レイアウト管理
 			{:else if $page.url.pathname.startsWith('/edit/page')}
 				サイト管理
 			{:else}
@@ -44,6 +40,21 @@ import { ArrowLeft, Pencil } from "@lucide/svelte";
 			{/if}
 		</span>
 
-		<div class="w-24"></div>
+		<div class="w-24 flex justify-end">
+			{#if $page.url.pathname === '/'}
+				<button 
+					class="flex items-center gap-1 font-semibold transition-colors text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300"
+					onclick={() => isLayoutEditMode.update(current => !current)}
+				>
+					{#if $isLayoutEditMode}
+						<Check class="w-5 h-5" />
+						<span class="text-lg">完了</span>
+					{:else}
+						<LayoutDashboard class="w-5 h-5" />
+						<span class="text-lg">編集</span>
+					{/if}
+				</button>
+			{/if}
+		</div>
 	</nav>
 </header>

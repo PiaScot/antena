@@ -5,13 +5,21 @@ import Header from "$lib/components/Header.svelte";
 import ArticleModal from "$lib/components/ArticleModal.svelte";
 import Footer from "$lib/components/Footer.svelte";
 import { page } from "$app/stores";
-import { setCategories } from "$lib/stores/categoryStore";
-import type { Site } from "$lib/types";
+import {
+	setCategories,
+	setSuperCategoryGroups,
+} from "$lib/stores/categoryStore";
+import type { Category, Site, SuperCategoryGroup } from "$lib/types";
 import { setSites } from "$lib/stores/siteStore";
 import type { SvelteComponent } from "svelte";
 
 const props = $props<{
-	data: { sites: Site[]; categories: string[]; error?: string };
+	data: {
+		sites: Site[];
+		categories: Category[];
+		superCategoryGroups: SuperCategoryGroup[];
+		error?: string;
+	};
 	children: () => SvelteComponent;
 }>();
 
@@ -20,6 +28,10 @@ const children = props.children;
 
 if (data.categories) {
 	setCategories(data.categories);
+}
+
+if (data.superCategoryGroups) {
+	setSuperCategoryGroups(data.superCategoryGroups);
 }
 
 if (data.sites) {

@@ -24,3 +24,7 @@ vite.config.ts.timestamp-*
 
 # background
 nonnon
+
+# etc
+/design_stock/
+TODO
