@@ -35,7 +35,7 @@ export interface Category {
   id: string;
   label: string;
   visible: boolean;
-  super_category_id: number;
+  super_category_id: number | null;
 }
 
 // same definition with supabase registered schema

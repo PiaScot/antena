@@ -12,18 +12,16 @@ import { slide } from "svelte/transition";
 
 const { group } = $props<{ group: SuperCategoryGroup }>();
 
-// --- State for Super Category Label Editing ---
+// --- State (変更なし) ---
 let isEditingLabel = $state(false);
 let editingLabel = $state(group.label);
-let labelInputElement = $state<HTMLInputElement>();
-
-// --- State for Adding New Child Category ---
+let labelInputElement: HTMLInputElement | undefined = $state();
 let isAddingCategory = $state(false);
 let newCategoryLabel = $state("");
 let newCategoryId = $state("");
-let newCategoryInputElement = $state<HTMLInputElement>();
+let newCategoryInputElement: HTMLInputElement | undefined = $state();
 
-// --- Super Category Functions ---
+// --- Functions (startEditingLabel, handleLabelUpdate, handleDeleteGroup, etc. は変更なし) ---
 function startEditingLabel() {
 	if (!$isLayoutEditMode) return;
 	isEditingLabel = true;
@@ -41,7 +39,6 @@ async function handleLabelUpdate() {
 		editingLabel = group.label;
 		return;
 	}
-
 	try {
 		const res = await fetch(`/api/super-categories/${group.id}`, {
 			method: "PATCH",
@@ -49,7 +46,6 @@ async function handleLabelUpdate() {
 			body: JSON.stringify({ label: editingLabel.trim() }),
 		});
 		if (!res.ok) throw new Error("Failed to update label");
-
 		superCategoryGroups.update((groups) =>
 			groups.map((g) =>
 				g.id === group.id ? { ...g, label: editingLabel.trim() } : g,
@@ -71,13 +67,11 @@ async function handleDeleteGroup() {
 		)
 	)
 		return;
-
 	try {
 		const res = await fetch(`/api/super-categories/${group.id}`, {
 			method: "DELETE",
 		});
 		if (res.status !== 204) throw new Error("Failed to delete group");
-
 		superCategoryGroups.update((groups) =>
 			groups.filter((g) => g.id !== group.id),
 		);
@@ -94,7 +88,6 @@ async function handleDeleteGroup() {
 	}
 }
 
-// --- Child Category Functions ---
 function showAddCategoryForm() {
 	isAddingCategory = true;
 	setTimeout(() => newCategoryInputElement?.focus(), 0);
@@ -115,7 +108,6 @@ async function submitNewCategory() {
 		alert("IDは半角英数字、ハイフン、アンダースコアのみ使用できます。");
 		return;
 	}
-
 	try {
 		const res = await fetch("/api/category", {
 			method: "POST",
@@ -130,9 +122,7 @@ async function submitNewCategory() {
 			const errorData = await res.json();
 			throw new Error(errorData.error || "Failed to add category");
 		}
-
 		const newCategory: Category = await res.json();
-
 		categoriesStore.update((cats) => [...cats, newCategory]);
 		superCategoryGroups.update((groups) =>
 			groups.map((g) =>
@@ -141,7 +131,6 @@ async function submitNewCategory() {
 					: g,
 			),
 		);
-
 		cancelAddCategory();
 	} catch (err) {
 		console.error("Failed to add category:", err);
@@ -149,26 +138,23 @@ async function submitNewCategory() {
 	}
 }
 
-async function handleDrop(
-	e: CustomEvent<{
+// ★★★ エラー2の修正: 引数の型を汎用的にし、内部で型アサーションを行う
+async function handleDrop(e: CustomEvent) {
+	const detail = e.detail as {
 		items: Category[];
 		info: { id: string; source: { id: number | "uncategorized" } };
-	}>,
-) {
-	group.categories = e.detail.items;
+	};
 
-	const droppedItemId = e.detail.info.id;
-	const sourceGroupId = e.detail.info.source.id;
+	group.categories = detail.items;
+
+	const droppedItemId = detail.info.id;
+	const sourceGroupId = detail.info.source.id;
 	const targetGroupId = group.id;
 
 	if (sourceGroupId !== targetGroupId) {
-		console.log(
-			`Moving category ${droppedItemId} from group ${sourceGroupId} to ${targetGroupId}`,
-		);
 		try {
 			const droppedItem = $categoriesStore.find((c) => c.id === droppedItemId);
 			if (!droppedItem) throw new Error("Dropped item not found in store");
-
 			const res = await fetch("/api/category", {
 				method: "PATCH",
 				headers: { "Content-Type": "application/json" },
@@ -180,14 +166,12 @@ async function handleDrop(
 						targetGroupId === "uncategorized" ? null : targetGroupId,
 				}),
 			});
-
 			if (!res.ok) {
 				const errorData = await res.json();
 				throw new Error(
 					errorData.error || "API call to update super_category_id failed",
 				);
 			}
-
 			categoriesStore.update((cats) =>
 				cats.map((c) =>
 					c.id === droppedItemId
@@ -209,21 +193,16 @@ async function handleDrop(
 }
 </script>
 
-<!-- ★★★ The root element no longer needs the dndzone action ★★★ -->
-<section class="flex flex-col">
-	<!-- Header section -->
-	{#if $isLayoutEditMode}
-		<!-- Edit Mode Header -->
-		<header 
-			class="relative flex items-center gap-2 mb-3"
-			use:dndzone={{ items: [group], id: `super-${group.id}`, type: 'super-category' }}
-		>
-			<button class="cursor-grab text-slate-400 hover:text-slate-600" title="このグループをドラッグ">
+{#if $isLayoutEditMode}
+	<section class="flex flex-col">
+		<header class="relative mb-3 flex items-center gap-2">
+			<span class="cursor-grab text-slate-400 hover:text-slate-600" title="このグループをドラッグ">
 				<GripVertical />
-			</button>
-			
-			<div class="flex-1 text-lg sm:text-xl font-bold text-center text-slate-700 dark:text-slate-200 
-					   bg-slate-200 dark:bg-slate-700/50 rounded-lg py-2 shadow-sm">
+			</span>
+
+			<div
+				class="flex-1 rounded-lg bg-slate-200 py-2 text-center text-lg font-bold text-slate-700 shadow-sm dark:bg-slate-700/50 dark:text-slate-200 sm:text-xl"
+			>
 				{#if isEditingLabel}
 					<input
 						type="text"
@@ -231,66 +210,93 @@ async function handleDrop(
 						bind:value={editingLabel}
 						class="w-full bg-transparent text-center focus:outline-none"
 						onblur={handleLabelUpdate}
-						onkeydown={e => e.key === 'Enter' && handleLabelUpdate()}
+						onkeydown={(e) => e.key === 'Enter' && handleLabelUpdate()}
 					/>
 				{:else}
-					<span onclick={startEditingLabel} class="block w-full">{group.label}</span>
+					<button
+						type="button"
+						onclick={startEditingLabel}
+						class="block w-full appearance-none bg-transparent text-inherit"
+					>
+						{group.label}
+					</button>
 				{/if}
 			</div>
 
-			<button class="text-slate-400 hover:text-red-500" title="このグループを削除" onclick={handleDeleteGroup}>
-				<Trash2 class="w-5 h-5" />
+			<button
+				class="text-slate-400 hover:text-red-500"
+				title="このグループを削除"
+				onclick={handleDeleteGroup}
+			>
+				<Trash2 class="h-5 w-5" />
 			</button>
 		</header>
-	{:else}
-		<!-- View Mode Header -->
-		<header class="mb-3">
-			<h2 class="text-xl font-bold pb-2 border-b-2 border-emerald-500 text-slate-800 dark:text-slate-200">
-				{group.label}
-			</h2>
-		</header>
-	{/if}
 
-
-	<!-- Child categories container -->
-	{#if $isLayoutEditMode}
-		<!-- ★★★ In Edit Mode, the div is a dropzone ★★★ -->
 		<div
-			class="grid grid-cols-2 gap-2 min-h-[5rem] rounded-lg p-2 bg-slate-200/50 dark:bg-slate-800/50 transition-colors"
-			use:dndzone={{ items: group.categories, id: group.id, type: 'category' }}
+			class="grid min-h-[5rem] grid-cols-2 gap-2 rounded-lg bg-slate-200/50 p-2 transition-colors dark:bg-slate-800/50"
+			use:dndzone={{ items: group.categories, type: 'category' }}
 			onfinalize={handleDrop}
 		>
 			{#each group.categories as cat (cat.id)}
 				<CategoryCard {cat} />
 			{/each}
 
-			<!-- Add New Category placeholder / form -->
 			{#if !isAddingCategory}
 				<div transition:slide|local>
-					<button 
-						class="flex items-center justify-center h-16 md:h-20 p-2 rounded-xl border-2 border-dashed border-slate-400 hover:border-emerald-500 hover:bg-emerald-500/10 text-slate-400 hover:text-emerald-500 transition-colors w-full"
+					<button
+						class="flex h-16 w-full items-center justify-center rounded-xl border-2 border-dashed border-slate-400 p-2 text-slate-400 transition-colors hover:border-emerald-500 hover:bg-emerald-500/10 hover:text-emerald-500 md:h-20"
 						onclick={showAddCategoryForm}
 					>
-						<Plus class="w-8 h-8" />
+						<Plus class="h-8 w-8" />
 					</button>
 				</div>
 			{:else}
-				<div class="relative flex flex-col gap-1 justify-center h-16 md:h-20 p-2 rounded-xl border-2 border-emerald-500 bg-emerald-500/10" transition:slide|local>
-					<input type="text" bind:value={newCategoryLabel} bind:this={newCategoryInputElement} placeholder="カテゴリ名" class="w-full text-sm bg-white/50 dark:bg-slate-800/50 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-emerald-400">
-					<input type="text" bind:value={newCategoryId} placeholder="ID (英数字と-)" class="w-full text-sm bg-white/50 dark:bg-slate-800/50 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-emerald-400" onkeydown={e => e.key === 'Enter' && submitNewCategory()}>
-					<div class="absolute top-1 right-1 flex gap-1">
-						<button class="p-1 rounded-full bg-emerald-500 text-white hover:bg-emerald-600" onclick={submitNewCategory} title="追加"><Check class="w-4 h-4"/></button>
-						<button class="p-1 rounded-full bg-slate-400 text-white hover:bg-slate-500" onclick={cancelAddCategory} title="キャンセル"><X class="w-4 h-4"/></button>
+				<div
+					class="relative flex h-16 flex-col justify-center gap-1 rounded-xl border-2 border-emerald-500 bg-emerald-500/10 p-2 transition:slide|local md:h-20"
+				>
+					<input
+						type="text"
+						bind:value={newCategoryLabel}
+						bind:this={newCategoryInputElement}
+						placeholder="カテゴリ名"
+						class="w-full rounded bg-white/50 px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-emerald-400 dark:bg-slate-800/50"
+					/>
+					<input
+						type="text"
+						bind:value={newCategoryId}
+						placeholder="ID (英数字と-)"
+						class="w-full rounded bg-white/50 px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-emerald-400 dark:bg-slate-800/50"
+						onkeydown={(e) => e.key === 'Enter' && submitNewCategory()}
+					/>
+					<div class="absolute right-1 top-1 flex gap-1">
+						<button
+							class="rounded-full bg-emerald-500 p-1 text-white hover:bg-emerald-600"
+							onclick={submitNewCategory}
+							title="追加"><Check class="h-4 w-4" /></button
+						>
+						<button
+							class="rounded-full bg-slate-400 p-1 text-white hover:bg-slate-500"
+							onclick={cancelAddCategory}
+							title="キャンセル"><X class="h-4 w-4" /></button
+						>
 					</div>
 				</div>
 			{/if}
 		</div>
-	{:else}
-		<!-- ★★★ In View Mode, the div is a simple container with no dndzone ★★★ -->
-		<div class="grid grid-cols-2 gap-2">
+	</section>
+{:else}
+	<section class="flex flex-col">
+		<header class="mb-3">
+			<h2
+				class="border-b-2 border-emerald-500 pb-2 text-xl font-bold text-slate-800 dark:text-slate-200"
+			>
+				{group.label}
+			</h2>
+		</header>
+		<div class="grid grid-cols-2 gap-2 pt-2">
 			{#each group.categories as cat (cat.id)}
 				<CategoryCard {cat} />
 			{/each}
 		</div>
-	{/if}
-</section>
+	</section>
+{/if}

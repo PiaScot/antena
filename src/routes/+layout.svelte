@@ -1,6 +1,7 @@
 <script lang="ts">
 import "../app.css";
-import { theme, fontSize, fontSizeClassMap } from "$lib/stores/theme";
+import { browser } from "$app/environment";
+import { userSettings, fontSizeClassMap } from "$lib/stores/userSettingsStore";
 import Header from "$lib/components/Header.svelte";
 import ArticleModal from "$lib/components/ArticleModal.svelte";
 import Footer from "$lib/components/Footer.svelte";
@@ -47,19 +48,19 @@ const article = $derived(() => {
 });
 
 $effect(() => {
-	const currentTheme = $theme;
-	const currentFontSize = $fontSize;
+	if (browser) {
+		const root = document.documentElement;
 
-	if (typeof document !== "undefined") {
-		const htmlEl = document.documentElement;
-		htmlEl.classList.toggle("dark", currentTheme === "dark");
-		for (const cls of Object.values(fontSizeClassMap)) {
-			htmlEl.classList.remove(cls);
-		}
-		const sizeClass = fontSizeClassMap[currentFontSize];
-		if (sizeClass) {
-			htmlEl.classList.add(sizeClass);
-		}
+		// 1. テーマ（ダークモード）のクラスを適用
+		root.classList.toggle("dark", $userSettings.theme === "dark");
+
+		// 2. フォントサイズのクラスを適用
+		// まず既存のフォントサイズクラスをすべて削除
+		Object.values(fontSizeClassMap).forEach((className) => {
+			root.classList.remove(className);
+		});
+		// 現在の選択に応じたクラスを追加
+		root.classList.add(fontSizeClassMap[$userSettings.fontSize]);
 	}
 });
 </script>
