@@ -1,28 +1,23 @@
 <script lang="ts">
-import dayjs from "dayjs";
-import utc from "dayjs/plugin/utc";
-import timezone from "dayjs/plugin/timezone";
-import type { ArticleFeedItem, FullArticleData } from "$lib/types";
+import type { ArticleFeedItem } from "$lib/types";
 import { activeArticle } from "$lib/stores/activeArticle";
 import { LoaderCircle } from "@lucide/svelte";
+import dayjs from "dayjs";
+import { readArticles } from "$lib/stores/readArticlesStore";
 
-dayjs.extend(utc);
-dayjs.extend(timezone);
-dayjs.tz.setDefault("Asia/Tokyo");
-
-const { article, withImage = true } = $props<{
+const { article, withImage = false } = $props<{
 	article: ArticleFeedItem;
 	withImage?: boolean;
 }>();
 
 let isLoading = $state(false);
+const formattedDate = dayjs(article.pub_date).format("YYYY/MM/DD");
 
-const formattedDate = $derived(
-	dayjs(article.pub_date).tz().format("YYYY/MM/DD HH:mm"),
-);
+const isRead = $derived($readArticles.has(article.url));
 
 async function handleClick() {
-	// window.open(article.url, "_blank", "noopener,noreferrer");
+	readArticles.markAsRead(article.url);
+
 	if (article.site?.scrape_options?.display_mode === "direct_link") {
 		window.open(article.url, "_blank", "noopener,noreferrer");
 		return;
@@ -33,7 +28,7 @@ async function handleClick() {
 		if (!res.ok) {
 			throw new Error(`Failed to fetch article content: ${res.statusText}`);
 		}
-		const fullArticleData: FullArticleData = await res.json();
+		const fullArticleData = await res.json();
 		activeArticle.set(fullArticleData);
 	} catch (err) {
 		console.error("Failed to open article modal:", err);
@@ -48,38 +43,54 @@ async function handleClick() {
 	tabindex="0"
 	onclick={handleClick}
 	onkeydown={(e) => (e.key === 'Enter' || e.key === ' ') && handleClick()}
-	class="group relative block w-full text-left bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-2 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
->
+	class="group relative block w-full rounded-lg border bg-white p-3 text-left shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 dark:border-slate-700 dark:bg-slate-800"
+	>
 	<div class="flex items-start gap-4">
 		{#if withImage}
 			<img
-        src={article.thumbnail ? `/api/image-proxy?url=${encodeURIComponent(article.thumbnail)}` : '/favicon.png'}
+				src={article.thumbnail
+					? `/api/image-proxy?url=${encodeURIComponent(article.thumbnail)}`
+					: '/favicon.png'}
 				alt="サムネイル"
-				class="w-20 h-20 rounded-lg object-cover flex-shrink-0 border border-slate-200 dark:border-slate-600"
+				class="h-20 w-20 flex-shrink-0 rounded-lg border-slate-200 object-cover dark:border-slate-600"
 				loading="lazy"
 			/>
 		{/if}
-		<div class="flex-1 min-w-0">
-            <div class="flex items-center justify-between gap-4 text-xs text-slate-500 dark:text-slate-400 mb-2">
+		<div class="min-w-0 flex-1">
+			<div
+				class="mb-2 flex items-center justify-between gap-4 text-xs text-slate-500 dark:text-slate-400"
+			>
 				<span class="flex-shrink-0">{formattedDate}</span>
 				{#if article.site?.title}
-					<span class="font-medium text-emerald-700 dark:text-emerald-400 truncate text-right flex-1 min-w-0 group-hover:underline" title={article.site.title}>
+					<span
+						class="min-w-0 flex-1 truncate text-right font-medium text-emerald-700 group-hover:underline dark:text-emerald-400"
+						title={article.site.title}
+					>
 						{article.site.title}
 					</span>
 				{/if}
 			</div>
-            <h3
-				class="text-base font-bold text-slate-800 dark:text-slate-100 line-clamp-2 min-h-[3rem]"
+
+			<h3
+				class="relative min-h-[3rem] pl-4 text-base font-bold text-slate-800 line-clamp-2 dark:text-slate-100"
 				title={article.title}
 			>
+				{#if !isRead}
+					<span
+						class="absolute left-0 top-1.5 h-2 w-2 rounded-full bg-emerald-500"
+						title="未読"
+					></span>
+				{/if}
 				{article.title || '記事タイトル'}
 			</h3>
 		</div>
 	</div>
 
 	{#if isLoading}
-		<div class="absolute inset-0 bg-slate-800/50 flex items-center justify-center rounded-xl">
-			<LoaderCircle class="w-8 h-8 text-white animate-spin" />
+		<div
+			class="absolute inset-0 flex items-center justify-center rounded-lg bg-slate-800/50"
+		>
+			<LoaderCircle class="h-8 w-8 animate-spin text-white" />
 		</div>
 	{/if}
 </div>
