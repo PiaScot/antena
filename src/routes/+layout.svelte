@@ -14,6 +14,11 @@ import type { Category, Site, SuperCategoryGroup } from "$lib/types";
 import { setSites } from "$lib/stores/siteStore";
 import type { SvelteComponent } from "svelte";
 
+import { injectAnalytics } from "@vercel/analytics/sveltekit";
+
+// FOR ANALYSIS
+injectAnalytics();
+
 const props = $props<{
 	data: {
 		sites: Site[];
