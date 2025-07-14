@@ -1,6 +1,6 @@
 // src/lib/stores/categoryStore.ts
-import type { Category, SuperCategoryGroup } from "$lib/types";
-import { get, writable } from "svelte/store";
+import type { Category, SuperCategoryGroup } from '$lib/types';
+import { get, writable } from 'svelte/store';
 
 /**
  * カテゴリ情報の一覧を管理するストア
@@ -12,7 +12,7 @@ export const categories = writable<Category[]>([]);
  * @param cats 新しいカテゴリの配列
  */
 export function setCategories(cats: Category[]) {
-  categories.set(cats);
+	categories.set(cats);
 }
 
 export const superCategoryGroups = writable<SuperCategoryGroup[]>([]);
@@ -22,7 +22,7 @@ export const superCategoryGroups = writable<SuperCategoryGroup[]>([]);
  * @param groups 新しい大カテゴリグループの配列
  */
 export function setSuperCategoryGroups(groups: SuperCategoryGroup[]) {
-  superCategoryGroups.set(groups);
+	superCategoryGroups.set(groups);
 }
 
 /**
@@ -30,12 +30,12 @@ export function setSuperCategoryGroups(groups: SuperCategoryGroup[]) {
  * @param newCat 追加するカテゴリオブジェクト
  */
 export function addCategory(newCat: Category) {
-  categories.update((currentCats) => {
-    if (!currentCats.some((cat) => cat.id === newCat.id)) {
-      return [...currentCats, newCat];
-    }
-    return currentCats;
-  });
+	categories.update((currentCats) => {
+		if (!currentCats.some((cat) => cat.id === newCat.id)) {
+			return [...currentCats, newCat];
+		}
+		return currentCats;
+	});
 }
 
 /**
@@ -43,9 +43,9 @@ export function addCategory(newCat: Category) {
  * @param id 削除するカテゴリのID
  */
 export function removeCategory(id: string) {
-  categories.update((currentCats) =>
-    currentCats.filter((cat) => cat.id !== id)
-  );
+	categories.update((currentCats) =>
+		currentCats.filter((cat) => cat.id !== id)
+	);
 }
 
 /**
@@ -55,9 +55,9 @@ export function removeCategory(id: string) {
  * @param updatedCat - 更新後のカテゴリデータ
  */
 export function updateCategory(originalId: string, updatedCat: Category) {
-  categories.update((currentCats) =>
-    currentCats.map((cat) => (cat.id === originalId ? updatedCat : cat))
-  );
+	categories.update((currentCats) =>
+		currentCats.map((cat) => (cat.id === originalId ? updatedCat : cat))
+	);
 }
 
 /**
@@ -66,9 +66,9 @@ export function updateCategory(originalId: string, updatedCat: Category) {
  * @param visible - 新しい表示状態 (true/false)
  */
 export function setCategoryVisible(id: string, visible: boolean) {
-  categories.update((cats) =>
-    cats.map((cat) => (cat.id === id ? { ...cat, visible } : cat))
-  );
+	categories.update((cats) =>
+		cats.map((cat) => (cat.id === id ? { ...cat, visible } : cat))
+	);
 }
 
 /**
@@ -77,8 +77,8 @@ export function setCategoryVisible(id: string, visible: boolean) {
  * @returns カテゴリオブジェクト、またはundefined
  */
 export function findCategory(id: string): Category | undefined {
-  // ★ .subscribe() の代わりに get() を使ってシンプルに値を取得
-  return get(categories).find((cat) => cat.id === id);
+	// ★ .subscribe() の代わりに get() を使ってシンプルに値を取得
+	return get(categories).find((cat) => cat.id === id);
 }
 
 /**
@@ -86,5 +86,5 @@ export function findCategory(id: string): Category | undefined {
  * @returns カテゴリの配列
  */
 export function getCategoriesSnapshot(): Category[] {
-  return get(categories);
+	return get(categories);
 }

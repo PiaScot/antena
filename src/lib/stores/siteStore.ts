@@ -1,5 +1,5 @@
-import type { Site } from "$lib/types";
-import { get, writable } from "svelte/store";
+import type { Site } from '$lib/types';
+import { get, writable } from 'svelte/store';
 
 /**
  * サイト情報の一覧を管理するストア
@@ -11,7 +11,7 @@ export const sites = writable<Site[]>([]);
  * @param newSites 新しいサイトの配列
  */
 export function setSites(newSites: Site[]) {
-  sites.set(newSites);
+	sites.set(newSites);
 }
 
 /**
@@ -19,12 +19,12 @@ export function setSites(newSites: Site[]) {
  * @param newSite 追加するサイトオブジェクト
  */
 export function addSite(newSite: Site) {
-  sites.update((currentSites) => {
-    if (!currentSites.some((site) => site.id === newSite.id)) {
-      return [...currentSites, newSite];
-    }
-    return currentSites;
-  });
+	sites.update((currentSites) => {
+		if (!currentSites.some((site) => site.id === newSite.id)) {
+			return [...currentSites, newSite];
+		}
+		return currentSites;
+	});
 }
 
 /**
@@ -32,7 +32,7 @@ export function addSite(newSite: Site) {
  * @param id 削除するサイトのID
  */
 export function removeSite(id: number) {
-  sites.update((currentSites) => currentSites.filter((site) => site.id !== id));
+	sites.update((currentSites) => currentSites.filter((site) => site.id !== id));
 }
 
 /**
@@ -40,11 +40,11 @@ export function removeSite(id: number) {
  * @param updatedSite 更新後のサイトオブジェクト
  */
 export function updateSite(updatedSite: Site) {
-  sites.update((currentSites) =>
-    currentSites.map((
-      site,
-    ) => (site.id === updatedSite.id ? updatedSite : site))
-  );
+	sites.update((currentSites) =>
+		currentSites.map((site) =>
+			site.id === updatedSite.id ? updatedSite : site
+		)
+	);
 }
 
 /**
@@ -52,13 +52,13 @@ export function updateSite(updatedSite: Site) {
  * @param categoryId クリア対象のカテゴリID
  */
 export function clearCategoryFromSites(categoryId: string) {
-  sites.update((currentSites) =>
-    currentSites.map((site) =>
-      site.category === categoryId
-        ? { ...site, category: "" } // categoryを空文字列に
-        : site
-    )
-  );
+	sites.update((currentSites) =>
+		currentSites.map((site) =>
+			site.category === categoryId
+				? { ...site, category: '' } // categoryを空文字列に
+				: site
+		)
+	);
 }
 
 /**
@@ -67,8 +67,8 @@ export function clearCategoryFromSites(categoryId: string) {
  * @returns サイトオブジェクト、またはundefined
  */
 export function findSite(id: number): Site | undefined {
-  // ★ .subscribe() の代わりに get() を使ってシンプルに値を取得
-  return get(sites).find((site) => site.id === id);
+	// ★ .subscribe() の代わりに get() を使ってシンプルに値を取得
+	return get(sites).find((site) => site.id === id);
 }
 
 /**
@@ -76,5 +76,5 @@ export function findSite(id: number): Site | undefined {
  * @returns サイトの配列
  */
 export function getSitesSnapshot(): Site[] {
-  return get(sites);
+	return get(sites);
 }

@@ -1,4 +1,4 @@
-import { writable } from "svelte/store";
+import { writable } from 'svelte/store';
 
 /**
  * 各ページのスクロール位置を保持するストア

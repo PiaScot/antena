@@ -1,8 +1,5 @@
 // src/lib/server/supabase.ts
-import { createClient } from "@supabase/supabase-js";
-import { SUPABASE_SERVICE_ROLE_KEY, SUPABASE_URL } from "$env/static/private";
+import { SUPABASE_SERVICE_ROLE_KEY, SUPABASE_URL } from '$env/static/private';
+import { createClient } from '@supabase/supabase-js';
 
-export const supabase = createClient(
-  SUPABASE_URL,
-  SUPABASE_SERVICE_ROLE_KEY,
-);
+export const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);

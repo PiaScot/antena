@@ -1,41 +1,41 @@
 <script lang="ts">
-import type { ArticleFeedItem } from "$lib/types";
-import { activeArticle } from "$lib/stores/activeArticle";
-import { LoaderCircle } from "@lucide/svelte";
-import dayjs from "dayjs";
-import { readArticles } from "$lib/stores/readArticlesStore";
+	import { activeArticle } from '$lib/stores/activeArticle';
+	import { LoaderCircle } from '@lucide/svelte';
+	import dayjs from 'dayjs';
+	import { readArticles } from '$lib/stores/readArticlesStore';
+	import type { ArticleFeedItem } from '$lib/types';
 
-const { article, withImage = false } = $props<{
-	article: ArticleFeedItem;
-	withImage?: boolean;
-}>();
+	const { article, withImage = false } = $props<{
+		article: ArticleFeedItem;
+		withImage?: boolean;
+	}>();
 
-let isLoading = $state(false);
-const formattedDate = dayjs(article.pub_date).format("YYYY/MM/DD");
+	let isLoading = $state(false);
+	const formattedDate = dayjs(article.pub_date).format('YYYY/MM/DD HH:mm');
 
-const isRead = $derived($readArticles.has(article.url));
+	const isRead = $derived($readArticles.has(article.url));
 
-async function handleClick() {
-	readArticles.markAsRead(article.url);
+	async function handleClick() {
+		readArticles.markAsRead(article.url);
 
-	if (article.site?.scrape_options?.display_mode === "direct_link") {
-		window.open(article.url, "_blank", "noopener,noreferrer");
-		return;
-	}
-	isLoading = true;
-	try {
-		const res = await fetch(`/api/articles/${article.id}`);
-		if (!res.ok) {
-			throw new Error(`Failed to fetch article content: ${res.statusText}`);
+		if (article.site?.scrape_options?.display_mode === 'direct_link') {
+			window.open(article.url, '_blank', 'noopener,noreferrer');
+			return;
 		}
-		const fullArticleData = await res.json();
-		activeArticle.set(fullArticleData);
-	} catch (err) {
-		console.error("Failed to open article modal:", err);
-	} finally {
-		isLoading = false;
+		isLoading = true;
+		try {
+			const res = await fetch(`/api/articles/${article.id}`);
+			if (!res.ok) {
+				throw new Error(`Failed to fetch article content: ${res.statusText}`);
+			}
+			const fullArticleData = await res.json();
+			activeArticle.set(fullArticleData);
+		} catch (err) {
+			console.error('Failed to open article modal:', err);
+		} finally {
+			isLoading = false;
+		}
 	}
-}
 </script>
 
 <div
@@ -43,8 +43,10 @@ async function handleClick() {
 	tabindex="0"
 	onclick={handleClick}
 	onkeydown={(e) => (e.key === 'Enter' || e.key === ' ') && handleClick()}
-	class="group relative block w-full rounded-lg border bg-white p-3 text-left shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 dark:border-slate-700 dark:bg-slate-800"
-	>
+	class="group relative block w-full rounded-lg border p-1 text-left shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 dark:border-slate-700 {isRead
+		? 'bg-slate-100 dark:bg-slate-700'
+		: 'bg-white dark:bg-slate-800'}"
+>
 	<div class="flex items-start gap-4">
 		{#if withImage}
 			<img
@@ -72,12 +74,12 @@ async function handleClick() {
 			</div>
 
 			<h3
-				class="relative min-h-[3rem] pl-4 text-base font-bold text-slate-800 line-clamp-2 dark:text-slate-100"
+				class="relative line-clamp-2 min-h-[3rem] pl-4 text-base font-bold text-slate-800 dark:text-slate-100"
 				title={article.title}
 			>
 				{#if !isRead}
 					<span
-						class="absolute left-0 top-1.5 h-2 w-2 rounded-full bg-emerald-500"
+						class="absolute top-1.5 left-0 h-2 w-2 rounded-full bg-emerald-500"
 						title="未読"
 					></span>
 				{/if}
