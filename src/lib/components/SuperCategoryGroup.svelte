@@ -136,7 +136,6 @@
 		}
 	}
 
-	// ★★★ エラー2の修正: 引数の型を汎用的にし、内部で型アサーションを行う
 	async function handleDrop(e: CustomEvent) {
 		const detail = e.detail as {
 			items: Category[];
