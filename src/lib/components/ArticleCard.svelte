@@ -1,5 +1,6 @@
 <script lang="ts">
-	// goto は不要になります
+	import { activeArticle } from '$lib/stores/activeArticle';
+	import { LoaderCircle } from '@lucide/svelte';
 	import dayjs from 'dayjs';
 	import { readArticles } from '$lib/stores/readArticlesStore';
 	import type { ArticleFeedItem } from '$lib/types';
@@ -9,28 +10,39 @@
 		withImage?: boolean;
 	}>();
 
+	let isLoading = $state(false);
 	const formattedDate = dayjs(article.pub_date).format('YYYY/MM/DD HH:mm');
+
 	const isRead = $derived($readArticles.has(article.url));
 
-	// ユーザーがリンクを操作した（クリックまたはキーボードで選択した）際に
-	// 既読にするためのシンプルな関数
-	function handleInteraction() {
+	async function handleClick() {
 		readArticles.markAsRead(article.url);
+
+		if (article.site?.scrape_options?.display_mode === 'direct_link') {
+			window.open(article.url, '_blank', 'noopener,noreferrer');
+			return;
+		}
+		isLoading = true;
+		try {
+			const res = await fetch(`/api/articles/${article.id}`);
+			if (!res.ok) {
+				throw new Error(`Failed to fetch article content: ${res.statusText}`);
+			}
+			const fullArticleData = await res.json();
+			activeArticle.set(fullArticleData.article);
+		} catch (err) {
+			console.error('Failed to open article modal:', err);
+		} finally {
+			isLoading = false;
+		}
 	}
 </script>
 
-<a
-	href={article.site?.scrape_options?.display_mode === 'direct_link'
-		? article.url
-		: `/articles/${article.id}`}
-	target={article.site?.scrape_options?.display_mode === 'direct_link'
-		? '_blank'
-		: undefined}
-	rel={article.site?.scrape_options?.display_mode === 'direct_link'
-		? 'noopener noreferrer'
-		: undefined}
-	onmousedown={handleInteraction}
-	onkeydown={(e) => (e.key === 'Enter' || e.key === ' ') && handleInteraction()}
+<div
+	role="button"
+	tabindex="0"
+	onclick={handleClick}
+	onkeydown={(e) => (e.key === 'Enter' || e.key === ' ') && handleClick()}
 	class="group relative block w-full rounded-lg border p-1 text-left shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 dark:border-slate-700 {isRead
 		? 'bg-slate-100 dark:bg-slate-700'
 		: 'bg-white dark:bg-slate-800'}"
@@ -75,4 +87,12 @@
 			</h3>
 		</div>
 	</div>
-</a>
+
+	{#if isLoading}
+		<div
+			class="absolute inset-0 flex items-center justify-center rounded-lg bg-slate-800/50"
+		>
+			<LoaderCircle class="h-8 w-8 animate-spin text-white" />
+		</div>
+	{/if}
+</div>
