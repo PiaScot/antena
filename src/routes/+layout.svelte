@@ -1,5 +1,4 @@
 <script lang="ts">
-	// ★ 変更点: browser のインポートは不要になります
 	import '../app.css';
 	import { userSettings } from '$lib/stores/userSettingsStore';
 	import Header from '$lib/components/Header.svelte';
@@ -53,14 +52,33 @@
 
 <svelte:head>
 	<script>
-		if (
-			localStorage.theme === 'dark' ||
-			(!('theme' in localStorage) &&
-				window.matchMedia('(prefers-color-scheme: dark)').matches)
-		) {
-			document.documentElement.classList.add('dark');
-		} else {
-			document.documentElement.classList.remove('dark');
+		try {
+			const settingsJSON = localStorage.getItem('user-settings');
+			const settings = settingsJSON ? JSON.parse(settingsJSON) : {};
+
+			const theme = settings.theme;
+			if (
+				theme === 'dark' ||
+				(!theme && window.matchMedia('(prefers-color-scheme: dark)').matches)
+			) {
+				document.documentElement.classList.add('dark');
+			} else {
+				document.documentElement.classList.remove('dark');
+			}
+
+			const fontSize = settings.fontSize;
+			if (fontSize) {
+				const fontSizeMap = {
+					small: 'text-xs',
+					medium: 'text-sm',
+					large: 'text-base'
+				};
+				if (fontSizeMap[fontSize]) {
+					document.documentElement.classList.add(fontSizeMap[fontSize]);
+				}
+			}
+		} catch (e) {
+			console.error('Error applying initial theme/font size:', e);
 		}
 	</script>
 </svelte:head>

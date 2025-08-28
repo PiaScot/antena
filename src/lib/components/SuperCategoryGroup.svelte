@@ -286,7 +286,7 @@
 			{/if}
 		</div>
 	</section>
-{:else}
+{:else if group.label !== '爆砕' && group.label !== '芸術'}
 	<section class="flex flex-col">
 		<header class="mb-3">
 			<h2

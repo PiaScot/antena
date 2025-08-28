@@ -212,14 +212,16 @@
 	<!-- Category Filters -->
 	<div class="flex flex-wrap gap-2">
 		{#each categories as cat (cat.id)}
-			<button
-				onclick={() => toggleCategoryVisibility(cat.id)}
-				class="flex-shrink-0 rounded-full px-3 py-1 text-sm font-semibold whitespace-nowrap transition-colors duration-150 {cat.visible
-					? 'bg-emerald-600 text-white dark:bg-emerald-400 dark:text-slate-900'
-					: 'bg-slate-200 text-slate-700 opacity-70 hover:opacity-100 dark:bg-slate-700 dark:text-slate-200'}"
-			>
-				{cat.label}
-			</button>
+			{#if cat.label !== 'REAL' && cat.label !== '2D'}
+				<button
+					onclick={() => toggleCategoryVisibility(cat.id)}
+					class="flex-shrink-0 rounded-full px-3 py-1 text-sm font-semibold whitespace-nowrap transition-colors duration-150 {cat.visible
+						? 'bg-emerald-600 text-white dark:bg-emerald-400 dark:text-slate-900'
+						: 'bg-slate-200 text-slate-700 opacity-70 hover:opacity-100 dark:bg-slate-700 dark:text-slate-200'}"
+				>
+					{cat.label}
+				</button>
+			{/if}
 		{/each}
 	</div>
 
@@ -445,7 +447,7 @@
 <div class="p-4">
 	{#each (categories || []).filter((cat) => cat.visible) as cat (cat.id)}
 		{@const sitesForCategory = filteredAndGroupedSites()[cat.id]}
-		{#if sitesForCategory?.length > 0}
+		{#if sitesForCategory?.length > 0 && cat.label !== 'REAL' && cat.label !== '2D'}
 			<div class="mb-8">
 				<div class="mb-3 flex items-center gap-2">
 					<span class="text-xl font-bold text-emerald-700 dark:text-emerald-300"
